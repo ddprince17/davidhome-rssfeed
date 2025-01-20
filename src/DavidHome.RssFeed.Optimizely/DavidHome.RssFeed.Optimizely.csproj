@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="EPiServer.Cms.AspNetCore.HtmlHelpers" />
+      <PackageReference Include="GitVersion.MsBuild">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\DavidHome.RssFeed.Models\DavidHome.RssFeed.Models.csproj" />
+      <ProjectReference Include="..\DavidHome.RssFeed.Optimizely.Contracts\DavidHome.RssFeed.Optimizely.Contracts.csproj" />
+      <ProjectReference Include="..\DavidHome.RssFeed.Optimizely.Models\DavidHome.RssFeed.Optimizely.Models.csproj" />
+      <ProjectReference Include="..\DavidHome.RssFeed\DavidHome.RssFeed.csproj" />
+    </ItemGroup>
+
+</Project>
