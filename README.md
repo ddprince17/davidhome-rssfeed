@@ -7,6 +7,7 @@
 	* Call ``AddContentPageFeed<TContainer, TItem>()`` as many time as desired. This will flag the desired content types to be taken into account during the generation of RSS. 
 * Install 'DavidHome.RssFeed.Storage.AzureBlob' to obtain blob container storage. 
 	* Call ``AddAzureBlobStorage()`` to add its support integrated to the RSS feed mechanisms. An IConfiguration instance is required, which must contain the configuration for your storage account. Providing direct access to the connection string is enough in this situation. More details in the next sections. 
+  * Call ``UseAzureBlobRssFeed()`` on an instance of ``IApplicationBuilder`` to make sure to properly initialize the storage container. It basically makes sure to create the container if it doesn't exist, thus avoiding to make this call each time accessing it. 
 
 ## Configuration
 
