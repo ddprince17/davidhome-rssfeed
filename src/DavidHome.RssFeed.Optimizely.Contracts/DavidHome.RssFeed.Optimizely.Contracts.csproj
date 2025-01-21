@@ -3,6 +3,8 @@
     <PropertyGroup>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Title>RSS Feed Optimizely Contracts</Title>
+        <Description>Represents contracts specifically designed for the Optimizely integration.</Description>
     </PropertyGroup>
 
     <ItemGroup>
