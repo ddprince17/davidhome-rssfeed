@@ -3,6 +3,8 @@
     <PropertyGroup>
       <ImplicitUsings>enable</ImplicitUsings>
       <Nullable>enable</Nullable>
+      <Title>RSS Core Library</Title>
+      <Description>RSS core library.</Description>
     </PropertyGroup>
 
     <PropertyGroup>

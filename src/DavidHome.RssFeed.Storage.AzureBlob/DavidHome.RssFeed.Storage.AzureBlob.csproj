@@ -3,6 +3,8 @@
     <PropertyGroup>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Title>RSS Feed Azure Blob Storage Provider</Title>
+        <Description>Contains concrete storage implementation onto an Azure blob container for the RSS feed.</Description>
     </PropertyGroup>
 
     <ItemGroup>

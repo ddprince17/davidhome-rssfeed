@@ -9,5 +9,20 @@
         <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
         <DefaultItemExcludesInProjectFolder>$(DefaultItemExcludesInProjectFolder);packages.lock.json</DefaultItemExcludesInProjectFolder>
         <InterceptorsNamespaces>$(InterceptorsNamespaces);Microsoft.Extensions.Configuration.Binder.SourceGeneration</InterceptorsNamespaces>
+        
+        <!-- Common NuGet Properties -->
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageIcon>icon.png</PackageIcon>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://git.davidhome.net/web/davidhome-rssfeed.git</RepositoryUrl>
+        <PackageProjectUrl>https://git.davidhome.net/web/davidhome-rssfeed</PackageProjectUrl>
+        <Copyright>Copyright © davidhome.net 2025</Copyright>
+        <Authors>ddprince</Authors>
     </PropertyGroup>
+    <ItemGroup>
+        <None Include="..\..\LICENSE" Pack="true" PackagePath=""/>
+        <None Include="..\..\assets\icon.png" Pack="true" PackagePath="\"/>
+        <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
 </Project>
