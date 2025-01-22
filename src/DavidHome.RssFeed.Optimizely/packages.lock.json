@@ -1508,7 +1508,6 @@
         "type": "Project",
         "dependencies": {
           "DavidHome.RssFeed.Models": "[1.0.0, )",
-          "EPiServer.CMS.Core": "[12.4.0, 13.0.0)",
           "System.ServiceModel.Syndication": "[8.0.0, )"
         }
       },
