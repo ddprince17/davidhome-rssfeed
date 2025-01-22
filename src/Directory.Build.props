@@ -15,9 +15,9 @@
         <PackageIcon>icon.png</PackageIcon>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <RepositoryType>git</RepositoryType>
-        <RepositoryUrl>https://git.davidhome.net/web/davidhome-rssfeed.git</RepositoryUrl>
-        <PackageProjectUrl>https://git.davidhome.net/web/davidhome-rssfeed</PackageProjectUrl>
-        <Copyright>Copyright © davidhome.net 2025</Copyright>
+        <RepositoryUrl>https://git.davidhome.net/web/davidhome-rssfeed</RepositoryUrl>
+        <PackageProjectUrl>https://www.davidhome.net/</PackageProjectUrl>
+        <Copyright>Copyright (c) davidhome.net 2025</Copyright>
         <Authors>ddprince</Authors>
     </PropertyGroup>
     <ItemGroup>
