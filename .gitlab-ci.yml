@@ -23,8 +23,7 @@ deploy:
     - dotnet-gitversion /output buildserver
     - dotnet restore --locked-mode --packages $NUPKG_LOCATION
     - dotnet pack --packages $NUPKG_LOCATION -o $ARTIFACTS_LOCATION -c Release
-    - dotnet nuget add source "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/nuget/index.json" --name gitlab --username gitlab-ci-token --password $CI_JOB_TOKEN --store-password-in-clear-text
-    - dotnet nuget push "$ARTIFACTS_LOCATION/*.nupkg" --source gitlab
+    - dotnet nuget push "$ARTIFACTS_LOCATION/*.nupkg" --api-key $NUGET_ORG_API_KEY --source https://api.nuget.org/v3/index.json
   rules:
    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   environment: production
