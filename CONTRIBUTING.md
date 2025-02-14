@@ -4,11 +4,11 @@ Thank you for considering contributing to davidhome-rssfeed! We welcome contribu
 
 ## How to Contribute
 
-1. **Fork the repository**: Click the "Fork" button at the top right of the repository page to create a copy of the repository in your GitLab account.
+1. **Fork the repository**: Click the "Fork" button.
 
 2. **Clone your fork**: Clone your forked repository to your local machine using the following command:
     ```sh
-    git clone https://git.davidhome.net/your-username/davidhome-rssfeed.git
+    git clone https://example.com/your-username/davidhome-rssfeed.git
     ```
 
 3. **Create a branch**: Create a new branch for your changes. Use a descriptive name for your branch.
@@ -36,7 +36,3 @@ Thank you for considering contributing to davidhome-rssfeed! We welcome contribu
 - All submissions will be reviewed by the project maintainers.
 - Feedback will be provided, and changes may be requested.
 - Once your changes are approved, they will be merged into the main branch.
-
-## Additional Resources
-
-You need to register on our GitLab instance, please contact me on LinkedIn to authorize your registration. You can find my LinkedIn link on my blog: [https://www.davidhome.net](https://www.davidhome.net)
