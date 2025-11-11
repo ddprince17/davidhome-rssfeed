@@ -1,10 +1,12 @@
-﻿using DavidHome.RssFeed.Contracts;
+﻿using System.Globalization;
+using DavidHome.RssFeed.Contracts;
 using DavidHome.RssFeed.Models;
 using DavidHome.RssFeed.Optimizely.Models.Options;
 using DavidHome.RssFeed.Optimizely.Routing;
 using EPiServer;
 using EPiServer.Core;
 using EPiServer.DataAbstraction;
+using EPiServer.Filters;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -12,16 +14,22 @@ namespace DavidHome.RssFeed.Optimizely.Services;
 
 public class OptimizelyRssFeedDiscoveryService : IRssFeedDiscoveryService
 {
+    private readonly FilterSort _sortPublishedDescending = new(FilterSortOrder.PublishedDescending);
+    
     private readonly IEnumerable<RssFeedPartialRouter> _routers;
     private readonly ILogger<OptimizelyRssFeedDiscoveryService> _logger;
     private readonly IContentTypeRepository _contentTypeRepository;
     private readonly IContentModelUsage _contentModelUsage;
     private readonly IContentLoader _contentLoader;
     private readonly IOptionsMonitor<RssFeedOptimizelyOptions> _rssFeedOptions;
+    private readonly ILanguageBranchRepository _languageBranchRepository;
+    private readonly IPageCriteriaQueryable _pageCriteriaQueryable;
+    
     private RssFeedOptimizelyOptions DefaultOptions => _rssFeedOptions.CurrentValue;
 
     public OptimizelyRssFeedDiscoveryService(IEnumerable<RssFeedPartialRouter> routers, ILogger<OptimizelyRssFeedDiscoveryService> logger,
-        IContentTypeRepository contentTypeRepository, IContentModelUsage contentModelUsage, IContentLoader contentLoader, IOptionsMonitor<RssFeedOptimizelyOptions> rssFeedOptions)
+        IContentTypeRepository contentTypeRepository, IContentModelUsage contentModelUsage, IContentLoader contentLoader, IOptionsMonitor<RssFeedOptimizelyOptions> rssFeedOptions,
+        ILanguageBranchRepository languageBranchRepository, IPageCriteriaQueryable pageCriteriaQueryable)
     {
         _routers = routers;
         _logger = logger;
@@ -29,6 +37,8 @@ public class OptimizelyRssFeedDiscoveryService : IRssFeedDiscoveryService
         _contentModelUsage = contentModelUsage;
         _contentLoader = contentLoader;
         _rssFeedOptions = rssFeedOptions;
+        _languageBranchRepository = languageBranchRepository;
+        _pageCriteriaQueryable = pageCriteriaQueryable;
     }
 
     public virtual async IAsyncEnumerable<FeedDiscoveryResult> ResolveFeeds()
@@ -47,35 +57,72 @@ public class OptimizelyRssFeedDiscoveryService : IRssFeedDiscoveryService
             _logger.LogInformation("Router '{routerType}' has feed container type '{feedContainerType}' and feed item type '{feedItemType}'.", routerType, feedContainerType,
                 feedItemType);
 
+            var loaderOptions = GetLoaderOptions();
             var feedContainerContentType = _contentTypeRepository.Load(feedContainerType);
-            var feedContainerUsages = _contentModelUsage.ListContentOfContentType(feedContainerContentType);
-            var feedContainerPages = _contentLoader
-                .GetItems(feedContainerUsages.Where(usage => usage != null).Select(usage => usage.ContentLink), [LanguageLoaderOption.MasterLanguage()])
-                .Where(content => content != null && content.GetType().IsAssignableTo(feedContainerType) && PublishedStateAssessor.IsPublished(content));
+            var feedItemContentType = _contentTypeRepository.Load(feedItemType);
+            
+            var feedContainerUsagesChunks = _contentModelUsage
+                .ListContentOfContentType(feedContainerContentType)
+                .Where(usage => usage != null)
+                .Select(usage => new ContentReference(usage.ContentLink.ID, 0))
+                .Chunk(_rssFeedOptions.CurrentValue.ContainerChunkSize ?? 100);
 
-            foreach (var feedContainerPage in feedContainerPages)
+            foreach (var feedContainerUsages in feedContainerUsagesChunks)
             {
-                var feedOptions = _rssFeedOptions.Get(feedContainerType.Name);
-                var feedContainerDescendents = feedContainerPage != null ? _contentLoader.GetDescendents(feedContainerPage.ContentLink) : [];
-                var containerFeedItemPages = _contentLoader.GetItems(feedContainerDescendents, [LanguageLoaderOption.MasterLanguage()])
-                    .Where(content => content != null && content.GetType().IsAssignableTo(feedItemType) && PublishedStateAssessor.IsPublished(content))
-                    .OrderByDescending(content => content is IChangeTrackable changeTrackable ? changeTrackable.Created : DateTime.MinValue)
-                    .Take(feedOptions.MaxSyndicationItems ?? DefaultOptions.MaxSyndicationItems ?? 20);
+                var feedContainerPages = _contentLoader
+                    .GetItems(feedContainerUsages, [LanguageLoaderOption.MasterLanguage()])
+                    .Where(content => content != null && content.GetType().IsAssignableTo(feedContainerType) && PublishedStateAssessor.IsPublished(content));
+                    // .GroupBy(content => content is ILocale localeContent ? localeContent.Language.Name : CultureInfo.InvariantCulture.Name);
 
-                // ReSharper disable SuspiciousTypeConversion.Global -> We enforce this rule under the initialization logic. We expect these types.
-                yield return new FeedDiscoveryResult { FeedContainer = feedContainerPage as IRssFeedContainer, FeedItems = containerFeedItemPages.OfType<IRssFeedItem>() };
-                // ReSharper restore SuspiciousTypeConversion.Global
+                    
+                    var pageTypeCriteria = new PropertyCriteria
+                    {
+                        Name = nameof(PropertyPageType.PageTypeID), Type = PropertyDataType.PageType, Required = true, Condition = CompareCondition.Equal,
+                        Value = feedItemContentType.ID.ToString()
+                    };
+                    var result = _pageCriteriaQueryable.FindPagesWithCriteria(feedContainerUsages.First(), [pageTypeCriteria], "", new LanguageSelector(""));
+                    _sortPublishedDescending.Filter(result);
+                
+                foreach (var feedContainerPage in feedContainerPages)
+                {
+                    
+                    var feedOptions = _rssFeedOptions.Get(feedContainerType.Name);
+                    var feedContainerDescendents = feedContainerPage != null ? _contentLoader.GetDescendents(feedContainerPage.ContentLink) : [];
+                    var containerFeedItemPages = _contentLoader.GetItems(feedContainerDescendents, loaderOptions)
+                        .Where(content => content != null && content.GetType().IsAssignableTo(feedItemType) && PublishedStateAssessor.IsPublished(content))
+                        .OrderByDescending(content => content is IChangeTrackable changeTrackable ? changeTrackable.Created : DateTime.MinValue)
+                        .Take(feedOptions.MaxSyndicationItems ?? DefaultOptions.MaxSyndicationItems ?? 50)
+                        .Select(content => new { Language = content is ILocale localeContent ? localeContent.Language.Name : CultureInfo.InvariantCulture.Name, Page = content });
+
+                    // ReSharper disable SuspiciousTypeConversion.Global -> We enforce this rule under the initialization logic. We expect these types.
+                    yield return new FeedDiscoveryResult
+                        { FeedContainer = feedContainerPage as IRssFeedSourceContainer, FeedItems = containerFeedItemPages.OfType<IRssFeedSourceItem>() };
+                    // ReSharper restore SuspiciousTypeConversion.Global    
+                    
+                }
             }
         }
-        
+
         // Will force this method to be async enumerable.
         await Task.CompletedTask;
+    }
+
+    private LoaderOptions GetLoaderOptions()
+    {
+        var languageLoaderOptions = _languageBranchRepository
+            .ListEnabled()
+            .Select(branch => LanguageLoaderOption.Specific(branch.Culture))
+            .Concat([LanguageLoaderOption.MasterLanguage()])
+            .ToArray();
+        LoaderOptions loaderOptions = [..languageLoaderOptions];
+
+        return loaderOptions;
     }
 
     private Type? GetFeedItemType(Type? feedContainerType, Type routerType)
     {
         var inheritedContainerInterface = feedContainerType?.GetInterfaces().FirstOrDefault(type => type.IsAssignableTo(typeof(IRssFeedContainer)));
-        
+
         if (inheritedContainerInterface is { IsConstructedGenericType: true })
         {
             return inheritedContainerInterface.GenericTypeArguments.First();
