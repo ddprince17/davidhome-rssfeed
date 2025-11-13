@@ -29,21 +29,32 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
         _feedOptions = feedOptions;
     }
 
-    public Task<bool> IsValidFeedModel(IRssFeedBase? feedModel)
+    public Task<bool> IsValidFeedModel(IRssFeedSourceBase? feedModel)
     {
         return Task.FromResult(true);
     }
 
-    public Task PreProcess(IRssFeedBase? feedModel)
+    public Task PreProcess(IRssFeedSourceBase? feedModel)
     {
-        ProcessCommonOptimizelyProperties(feedModel);
+        IRssFeedItem rssFeedItem;
+        IContent content;
 
-        // ReSharper disable once SuspiciousTypeConversion.Global - This is expected and enforced in the initialization.
-        if (feedModel is not (IRssFeedItem rssFeedItem and IContent content))
+        switch (feedModel)
         {
-            return Task.CompletedTask;
+            // ReSharper disable once SuspiciousTypeConversion.Global
+            case IContent sourceContent:
+                rssFeedItem = new ContentRssFeedItem(sourceContent);
+                content = sourceContent;
+                break;
+            case IRssFeedItem existingRssFeedItem and IContentRssFeed contentRssFeed:
+                rssFeedItem = existingRssFeedItem;
+                content = contentRssFeed.Content;
+                break;
+            default:
+                return Task.CompletedTask;
         }
 
+        ProcessCommonOptimizelyProperties(rssFeedItem);
         AddItemCategories(rssFeedItem, content);
         SetFeedItemContent(rssFeedItem, content);
         // TODO: Will be completed in a later release.
@@ -111,7 +122,7 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
 
         rssFeedItem.RssContent = new TextSyndicationContent(contentHtml.Ellipsis(contentMaxLength), TextSyndicationContentKind.Html);
     }
-    
+
     private ICollection<SyndicationPerson?> CreateContentAuthors(IContent content)
     {
         var versionFilter = new VersionFilter
@@ -129,5 +140,22 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
         // var contentAuthors = contentVersions.Select(version => version.SavedBy).Distinct().Select(name => new SyndicationPerson(name));
 
         throw new NotImplementedException();
+    }
+
+    private class ContentRssFeedItem : IRssFeedItem, IContentRssFeed
+    {
+        public IContent Content { get; }
+        public string? RssId { get; set; }
+        public string? RssTitle { get; set; }
+        public Uri? RssAlternateLink { get; set; }
+        public DateTimeOffset? RssLastUpdatedTime { get; set; }
+        public SyndicationContent? RssContent { get; set; }
+        public ICollection<SyndicationCategory?>? RssCategories { get; set; }
+        public ICollection<SyndicationPerson?>? RssAuthors { get; set; }
+
+        public ContentRssFeedItem(IContent content)
+        {
+            Content = content;
+        }
     }
 }

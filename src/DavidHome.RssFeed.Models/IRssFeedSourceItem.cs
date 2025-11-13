@@ -1,3 +1,3 @@
 ﻿namespace DavidHome.RssFeed.Models;
 
-public interface IRssFeedSourceItem;
+public interface IRssFeedSourceItem : IRssFeedSourceBase;

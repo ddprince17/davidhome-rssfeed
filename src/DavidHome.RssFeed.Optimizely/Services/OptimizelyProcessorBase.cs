@@ -17,11 +17,12 @@ public abstract class OptimizelyProcessorBase
     protected void ProcessCommonOptimizelyProperties(IRssFeedBase? feedModel)
     {
         // ReSharper disable once SuspiciousTypeConversion.Global - This is expected and enforced in the initialization.
-        if (feedModel is not IContent content)
+        if (feedModel is not IContentRssFeed contentRssFeed)
         {
             return;
         }
 
+        var content = contentRssFeed.Content;
         var contentUrl = _urlResolver.GetUrl(content);
 
         // Assuming this is absolute. Technically it should if the scheduled job is not running under the http context of the user.

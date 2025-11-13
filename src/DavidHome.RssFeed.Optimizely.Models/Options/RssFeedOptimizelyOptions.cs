@@ -7,5 +7,4 @@ public record RssFeedOptimizelyOptions : RssFeedOptions
     public string? FeedRelativeUrl { get; set; } = "rss";
     public string? ContentAreaPropertyName { get; set; }
     public string? FeedTitlePropertyName { get; set; }
-    public int? ContainerChunkSize { get; set; } = 100;
 }

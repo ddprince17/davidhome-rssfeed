@@ -7,6 +7,7 @@ using EPiServer;
 using EPiServer.Core;
 using EPiServer.DataAbstraction;
 using EPiServer.Filters;
+using EPiServer.Web;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -15,30 +16,28 @@ namespace DavidHome.RssFeed.Optimizely.Services;
 public class OptimizelyRssFeedDiscoveryService : IRssFeedDiscoveryService
 {
     private readonly FilterSort _sortPublishedDescending = new(FilterSortOrder.PublishedDescending);
-    
+
     private readonly IEnumerable<RssFeedPartialRouter> _routers;
     private readonly ILogger<OptimizelyRssFeedDiscoveryService> _logger;
-    private readonly IContentTypeRepository _contentTypeRepository;
-    private readonly IContentModelUsage _contentModelUsage;
-    private readonly IContentLoader _contentLoader;
     private readonly IOptionsMonitor<RssFeedOptimizelyOptions> _rssFeedOptions;
+    private readonly IContentTypeRepository _contentTypeRepository;
     private readonly ILanguageBranchRepository _languageBranchRepository;
     private readonly IPageCriteriaQueryable _pageCriteriaQueryable;
-    
+    private readonly ISiteDefinitionResolver _siteDefinitionResolver;
+
     private RssFeedOptimizelyOptions DefaultOptions => _rssFeedOptions.CurrentValue;
 
     public OptimizelyRssFeedDiscoveryService(IEnumerable<RssFeedPartialRouter> routers, ILogger<OptimizelyRssFeedDiscoveryService> logger,
-        IContentTypeRepository contentTypeRepository, IContentModelUsage contentModelUsage, IContentLoader contentLoader, IOptionsMonitor<RssFeedOptimizelyOptions> rssFeedOptions,
-        ILanguageBranchRepository languageBranchRepository, IPageCriteriaQueryable pageCriteriaQueryable)
+        IOptionsMonitor<RssFeedOptimizelyOptions> rssFeedOptions, IContentTypeRepository contentTypeRepository, ILanguageBranchRepository languageBranchRepository,
+        IPageCriteriaQueryable pageCriteriaQueryable, ISiteDefinitionResolver siteDefinitionResolver)
     {
         _routers = routers;
         _logger = logger;
-        _contentTypeRepository = contentTypeRepository;
-        _contentModelUsage = contentModelUsage;
-        _contentLoader = contentLoader;
         _rssFeedOptions = rssFeedOptions;
+        _contentTypeRepository = contentTypeRepository;
         _languageBranchRepository = languageBranchRepository;
         _pageCriteriaQueryable = pageCriteriaQueryable;
+        _siteDefinitionResolver = siteDefinitionResolver;
     }
 
     public virtual async IAsyncEnumerable<FeedDiscoveryResult> ResolveFeeds()
@@ -57,49 +56,46 @@ public class OptimizelyRssFeedDiscoveryService : IRssFeedDiscoveryService
             _logger.LogInformation("Router '{routerType}' has feed container type '{feedContainerType}' and feed item type '{feedItemType}'.", routerType, feedContainerType,
                 feedItemType);
 
-            var loaderOptions = GetLoaderOptions();
-            var feedContainerContentType = _contentTypeRepository.Load(feedContainerType);
-            var feedItemContentType = _contentTypeRepository.Load(feedItemType);
-            
-            var feedContainerUsagesChunks = _contentModelUsage
-                .ListContentOfContentType(feedContainerContentType)
-                .Where(usage => usage != null)
-                .Select(usage => new ContentReference(usage.ContentLink.ID, 0))
-                .Chunk(_rssFeedOptions.CurrentValue.ContainerChunkSize ?? 100);
-
-            foreach (var feedContainerUsages in feedContainerUsagesChunks)
+            await foreach (var discoveryResult in ResolveContentTypeFeeds(feedContainerType, feedItemType))
             {
-                var feedContainerPages = _contentLoader
-                    .GetItems(feedContainerUsages, [LanguageLoaderOption.MasterLanguage()])
-                    .Where(content => content != null && content.GetType().IsAssignableTo(feedContainerType) && PublishedStateAssessor.IsPublished(content));
-                    // .GroupBy(content => content is ILocale localeContent ? localeContent.Language.Name : CultureInfo.InvariantCulture.Name);
+                yield return discoveryResult;
+            }
+        }
+    }
 
-                    
-                    var pageTypeCriteria = new PropertyCriteria
-                    {
-                        Name = nameof(PropertyPageType.PageTypeID), Type = PropertyDataType.PageType, Required = true, Condition = CompareCondition.Equal,
-                        Value = feedItemContentType.ID.ToString()
-                    };
-                    var result = _pageCriteriaQueryable.FindPagesWithCriteria(feedContainerUsages.First(), [pageTypeCriteria], "", new LanguageSelector(""));
-                    _sortPublishedDescending.Filter(result);
-                
-                foreach (var feedContainerPage in feedContainerPages)
+    private async IAsyncEnumerable<FeedDiscoveryResult> ResolveContentTypeFeeds(Type feedContainerType, Type feedItemType)
+    {
+        var feedContainerOptions = _rssFeedOptions.Get(feedContainerType.Name);
+        var feedContainerContentType = _contentTypeRepository.Load(feedContainerType);
+        var feedItemContentType = _contentTypeRepository.Load(feedItemType);
+
+        foreach (var languageBranch in _languageBranchRepository.ListEnabled())
+        {
+            var languageSelector = new LanguageSelector(languageBranch.LanguageID);
+            var containerPages = FindContainerPages(feedContainerContentType, languageBranch, languageSelector);
+
+            foreach (var containerPage in containerPages)
+            {
+                if (!TryGetHostName(containerPage, languageBranch, out var hostName))
                 {
-                    
-                    var feedOptions = _rssFeedOptions.Get(feedContainerType.Name);
-                    var feedContainerDescendents = feedContainerPage != null ? _contentLoader.GetDescendents(feedContainerPage.ContentLink) : [];
-                    var containerFeedItemPages = _contentLoader.GetItems(feedContainerDescendents, loaderOptions)
-                        .Where(content => content != null && content.GetType().IsAssignableTo(feedItemType) && PublishedStateAssessor.IsPublished(content))
-                        .OrderByDescending(content => content is IChangeTrackable changeTrackable ? changeTrackable.Created : DateTime.MinValue)
-                        .Take(feedOptions.MaxSyndicationItems ?? DefaultOptions.MaxSyndicationItems ?? 50)
-                        .Select(content => new { Language = content is ILocale localeContent ? localeContent.Language.Name : CultureInfo.InvariantCulture.Name, Page = content });
-
-                    // ReSharper disable SuspiciousTypeConversion.Global -> We enforce this rule under the initialization logic. We expect these types.
-                    yield return new FeedDiscoveryResult
-                        { FeedContainer = feedContainerPage as IRssFeedSourceContainer, FeedItems = containerFeedItemPages.OfType<IRssFeedSourceItem>() };
-                    // ReSharper restore SuspiciousTypeConversion.Global    
-                    
+                    continue;
                 }
+
+                var itemPages = FindItemPages(feedItemContentType, containerPage, languageBranch, languageSelector);
+
+                _sortPublishedDescending.Filter(itemPages);
+
+                // ReSharper disable SuspiciousTypeConversion.Global -> Intentionally enforcing this rule under the initialization logic. We expect these types.
+                yield return new FeedDiscoveryResult
+                {
+                    HostNameIdentifier = hostName,
+                    Language = languageBranch.LanguageID,
+                    FeedContainer = (IRssFeedSourceContainer)containerPage,
+                    FeedItems = itemPages
+                        .Take(feedContainerOptions.MaxSyndicationItems ?? DefaultOptions.MaxSyndicationItems ?? 50)
+                        .Cast<IRssFeedSourceItem>()
+                };
+                // ReSharper restore SuspiciousTypeConversion.Global
             }
         }
 
@@ -107,16 +103,53 @@ public class OptimizelyRssFeedDiscoveryService : IRssFeedDiscoveryService
         await Task.CompletedTask;
     }
 
-    private LoaderOptions GetLoaderOptions()
+    private bool TryGetHostName(PageData containerPage, LanguageBranch languageBranch, out string? hostName)
     {
-        var languageLoaderOptions = _languageBranchRepository
-            .ListEnabled()
-            .Select(branch => LanguageLoaderOption.Specific(branch.Culture))
-            .Concat([LanguageLoaderOption.MasterLanguage()])
-            .ToArray();
-        LoaderOptions loaderOptions = [..languageLoaderOptions];
+        var containerSiteDefinition = _siteDefinitionResolver.GetByContent(containerPage.ContentLink, false);
+        if (containerSiteDefinition == null)
+        {
+            _logger.LogWarning("Could not resolve site definition for feed container page '{pageName}'. Skipping feed discovery for this page.", containerPage.Name);
 
-        return loaderOptions;
+            hostName = null;
+
+            return false;
+        }
+
+        var primaryHost = containerSiteDefinition.GetPrimaryHost(languageBranch.Culture);
+
+        hostName = primaryHost.Name;
+
+        return true;
+    }
+
+    private PageDataCollection FindItemPages(ContentType feedItemContentType, PageData containerPage, LanguageBranch languageBranch, LanguageSelector languageSelector)
+    {
+        var itemCriteria = new PropertyCriteria
+        {
+            Name = nameof(PropertyPageType.PageTypeID),
+            Type = PropertyDataType.PageType,
+            Required = true,
+            Condition = CompareCondition.Equal,
+            Value = feedItemContentType.ID.ToString()
+        };
+        var itemPages = _pageCriteriaQueryable.FindPagesWithCriteria(containerPage.ContentLink, [itemCriteria], languageBranch.LanguageID, languageSelector);
+
+        return itemPages;
+    }
+
+    private PageDataCollection FindContainerPages(ContentType feedContainerContentType, LanguageBranch languageBranch, LanguageSelector languageSelector)
+    {
+        var containerCriteria = new PropertyCriteria
+        {
+            Name = nameof(PropertyPageType.PageTypeID),
+            Type = PropertyDataType.PageType,
+            Required = true,
+            Condition = CompareCondition.Equal,
+            Value = feedContainerContentType.ID.ToString()
+        };
+
+        var containerPages = _pageCriteriaQueryable.FindPagesWithCriteria(ContentReference.RootPage, [containerCriteria], languageBranch.LanguageID, languageSelector);
+        return containerPages;
     }
 
     private Type? GetFeedItemType(Type? feedContainerType, Type routerType)

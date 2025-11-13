@@ -16,20 +16,32 @@ public class OptimizelyContentContainerProcessor : OptimizelyProcessorBase, IRss
         _urlResolver = urlResolver;
     }
 
-    public Task<bool> IsValidFeedModel(IRssFeedBase? feedModel)
+    public Task<bool> IsValidFeedModel(IRssFeedSourceBase? feedModel)
     {
         return Task.FromResult(true);
     }
 
-    public Task PreProcess(IRssFeedBase? feedModel)
+    public Task PreProcess(IRssFeedSourceBase? feedModel)
     {
-        ProcessCommonOptimizelyProperties(feedModel);
+        IRssFeedContainer rssFeedContainer;
+        IContent content;
 
-        // ReSharper disable once SuspiciousTypeConversion.Global - This is expected and enforced in the initialization.
-        if (feedModel is not (IRssFeedContainer rssFeedContainer and IContent content))
+        switch (feedModel)
         {
-            return Task.CompletedTask;
+            // ReSharper disable once SuspiciousTypeConversion.Global
+            case IContent sourceContent:
+                rssFeedContainer = new ContentRssFeedContainer(sourceContent);
+                content = sourceContent;
+                break;
+            case IRssFeedContainer existingRssFeedItem and IContentRssFeed contentRssFeed:
+                rssFeedContainer = existingRssFeedItem;
+                content = contentRssFeed.Content;
+                break;
+            default:
+                return Task.CompletedTask;
         }
+
+        ProcessCommonOptimizelyProperties(rssFeedContainer);
 
         rssFeedContainer.RssInternalId = content.ContentGuid.ToString("N");
 
@@ -52,5 +64,21 @@ public class OptimizelyContentContainerProcessor : OptimizelyProcessorBase, IRss
         }
 
         return Task.CompletedTask;
+    }
+
+    private class ContentRssFeedContainer : IRssFeedContainer, IContentRssFeed
+    {
+        public IContent Content { get; }
+        public string? RssId { get; set; }
+        public string? RssTitle { get; set; }
+        public Uri? RssAlternateLink { get; set; }
+        public DateTimeOffset? RssLastUpdatedTime { get; set; }
+        public string? RssInternalId { get; set; }
+        public string? RssDescription { get; set; }
+
+        public ContentRssFeedContainer(IContent content)
+        {
+            Content = content;
+        }
     }
 }

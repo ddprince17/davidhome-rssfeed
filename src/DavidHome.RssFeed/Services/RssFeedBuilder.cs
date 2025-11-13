@@ -41,7 +41,7 @@ public class RssFeedBuilder : IRssFeedBuilder
         }
     }
 
-    private async Task<SyndicationFeedResult> CreateSyndicationFeed(IRssFeedContainer? feedContainer, IEnumerable<SyndicationItem> feedItems)
+    private async Task<SyndicationFeedResult> CreateSyndicationFeed(IRssFeedSourceContainer? feedContainer, IEnumerable<SyndicationItem> feedItems)
     {
         await PreProcessContainer(feedContainer);
 
@@ -54,9 +54,16 @@ public class RssFeedBuilder : IRssFeedBuilder
     }
 
 
-    private async Task<SyndicationItem> CreateSyndicationItem(IRssFeedItem? item)
+    private async Task<SyndicationItem?> CreateSyndicationItem(IRssFeedSourceItem? itemSource)
     {
-        await PreProcessItem(item);
+        await PreProcessItem(itemSource);
+
+        // Has to also cover when the variable is not changed. 
+        // ReSharper disable once SuspiciousTypeConversion.Global - Intended. We change it in the pre-processing step.
+        if (itemSource is not IRssFeedItem item)
+        {
+            return null;
+        }
 
         var syndicationItem = new SyndicationItem(item!.RssTitle, item.RssContent, item.RssAlternateLink, item.RssId, item.RssLastUpdatedTime ?? DateTimeOffset.Now);
 
@@ -81,7 +88,7 @@ public class RssFeedBuilder : IRssFeedBuilder
         }
     }
 
-    private async Task PreProcessContainer(IRssFeedContainer? feedContainer)
+    private async Task PreProcessContainer(IRssFeedSourceContainer? feedContainer)
     {
         foreach (var rssFeedContainerProcessor in _rssFeedContainerProcessors)
         {
@@ -103,7 +110,7 @@ public class RssFeedBuilder : IRssFeedBuilder
         }
     }
 
-    private async Task PreProcessItem(IRssFeedItem? item)
+    private async Task PreProcessItem(IRssFeedSourceItem? item)
     {
         foreach (var rssFeedItemProcessor in _rssFeedItemProcessors)
         {
