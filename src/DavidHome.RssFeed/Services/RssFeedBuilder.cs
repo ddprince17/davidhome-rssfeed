@@ -46,9 +46,9 @@ public class RssFeedBuilder : IRssFeedBuilder
 
     private async Task<SyndicationFeedResult?> CreateSyndicationFeed(FeedDiscoveryResult? feedDiscoveryResult, IEnumerable<Task<SyndicationItem?>> feedItemsTask)
     {
-        var feedContainerSource = feedDiscoveryResult?.FeedContainer;
-        
-        await PreProcessContainer(feedContainerSource);
+        IRssFeedSourceBase? feedContainerSource = feedDiscoveryResult?.FeedContainer;
+
+        feedContainerSource = await PreProcessContainer(feedContainerSource);
         
         // ReSharper disable once SuspiciousTypeConversion.Global - Intended.
         if (feedContainerSource is not IRssFeedContainer feedContainer)
@@ -79,10 +79,12 @@ public class RssFeedBuilder : IRssFeedBuilder
 
     private async Task<SyndicationItem?> CreateSyndicationItem(IRssFeedSourceItem? itemSource)
     {
-        await PreProcessItem(itemSource);
+        IRssFeedSourceBase? itemSourceCasted = itemSource;
+        
+        itemSourceCasted = await PreProcessItem(itemSourceCasted);
 
         // ReSharper disable once SuspiciousTypeConversion.Global - Intended.
-        if (itemSource is not IRssFeedItem item)
+        if (itemSourceCasted is not IRssFeedItem item)
         {
             _logger.LogWarning(
                 "The item source has not been converted to an implementation of '{feedItemName}' during pre-processing. Either use the same object as source and destination or create an implementation of '{processorName}'.",
@@ -114,15 +116,20 @@ public class RssFeedBuilder : IRssFeedBuilder
         }
     }
 
-    private async Task PreProcessContainer(IRssFeedSourceContainer? feedContainer)
+    private async Task<IRssFeedSourceBase?> PreProcessContainer(IRssFeedSourceBase? feedContainer)
     {
         foreach (var rssFeedContainerProcessor in _rssFeedContainerProcessors)
         {
-            if (await rssFeedContainerProcessor.IsValidFeedModel(feedContainer))
+            if (!await rssFeedContainerProcessor.IsValidFeedModel(feedContainer))
             {
-                await rssFeedContainerProcessor.PreProcess(feedContainer);
+                continue;
             }
+            
+            rssFeedContainerProcessor.TransformSource(ref feedContainer);
+            await rssFeedContainerProcessor.PreProcess(feedContainer);
         }
+
+        return feedContainer;
     }
 
     private async Task PostProcessItem(IRssFeedItem item, SyndicationItem syndicationItem)
@@ -136,14 +143,19 @@ public class RssFeedBuilder : IRssFeedBuilder
         }
     }
 
-    private async Task PreProcessItem(IRssFeedSourceItem? item)
+    private async Task<IRssFeedSourceBase?> PreProcessItem(IRssFeedSourceBase? item)
     {
         foreach (var rssFeedItemProcessor in _rssFeedItemProcessors)
         {
-            if (await rssFeedItemProcessor.IsValidFeedModel(item))
+            if (!await rssFeedItemProcessor.IsValidFeedModel(item))
             {
-                await rssFeedItemProcessor.PreProcess(item);
+                continue;
             }
+            
+            rssFeedItemProcessor.TransformSource(ref item);
+            await rssFeedItemProcessor.PreProcess(item);
         }
+
+        return item;
     }
 }

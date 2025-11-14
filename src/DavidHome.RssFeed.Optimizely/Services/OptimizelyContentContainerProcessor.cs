@@ -24,9 +24,11 @@ public class OptimizelyContentContainerProcessor : OptimizelyProcessorBase, IRss
 
     public Task PreProcess(IRssFeedSourceBase? feedModel)
     {
-        var feedContainer = TransformSource<IRssFeedContainer>(ref feedModel);
+        TransformSource(ref feedModel);
+
+        var feedContainer = feedModel as IRssFeedContainer;
         var content = (feedContainer as IContentRssFeed)?.Content;
-        
+
         ProcessCommonOptimizelyProperties(feedContainer);
 
         feedContainer?.RssInternalId = content?.ContentGuid.ToString("N");
@@ -52,8 +54,8 @@ public class OptimizelyContentContainerProcessor : OptimizelyProcessorBase, IRss
         return Task.CompletedTask;
     }
 
-    public T? TransformSource<T>(ref IRssFeedSourceBase? feedModel) where T : IRssFeedSourceBase
+    public void TransformSource(ref IRssFeedSourceBase? feedModel)
     {
-        return (T?)(feedModel = feedModel?.TransformToFeedContainer());
+        feedModel = feedModel?.TransformToFeedContainer();
     }
 }
