@@ -43,19 +43,15 @@ public class RssFeedDataController : Controller, IRenderTemplate<RssFeedRoutedDa
         }
 
         var siteDefinition = _siteDefinitionResolver.GetByContent(feedContainer.ContentLink, false);
-        var requestHostName = _requestHostResolver.HostName;
-        var preferredCulture = ContentLanguage.PreferredCulture;
-        var contentHostName = siteDefinition.GetHosts(preferredCulture, false).FirstOrDefault(definition => Equals(definition.Name, requestHostName));
-
-        if (contentHostName is null)
+        
+        if (siteDefinition == null)
         {
             return NotFound();
         }
-
+        
         foreach (var rssFeedStorageProvider in _rssFeedStorageProviders)
         {
-            var feedSteam = await rssFeedStorageProvider.GetSavedStream(feedRoutedData.FeedId, (feedContainer as ILocale)?.Language.Name,
-                siteDefinition.GetPrimaryHost(preferredCulture).Name);
+            var feedSteam = await rssFeedStorageProvider.GetSavedStream(feedRoutedData.FeedId, (feedContainer as ILocale)?.Language.Name, siteDefinition.Id.ToString("N"));
 
             if (feedSteam is not null)
             {

@@ -75,7 +75,7 @@ public class OptimizelyRssFeedDiscoveryService : IRssFeedDiscoveryService
 
             foreach (var containerPage in containerPages)
             {
-                if (!TryGetHostName(containerPage, languageBranch, out var hostName))
+                if (!TryGetHostName(containerPage, out var hostNameIdentifier))
                 {
                     continue;
                 }
@@ -87,7 +87,7 @@ public class OptimizelyRssFeedDiscoveryService : IRssFeedDiscoveryService
                 // ReSharper disable SuspiciousTypeConversion.Global -> Intentionally enforcing this rule under the initialization logic. We expect these types.
                 yield return new FeedDiscoveryResult
                 {
-                    HostNameIdentifier = hostName,
+                    HostNameIdentifier = hostNameIdentifier,
                     Language = languageBranch.LanguageID,
                     FeedContainer = (IRssFeedSourceContainer)containerPage,
                     FeedItems = itemPages
@@ -102,7 +102,7 @@ public class OptimizelyRssFeedDiscoveryService : IRssFeedDiscoveryService
         await Task.CompletedTask;
     }
 
-    private bool TryGetHostName(PageData containerPage, LanguageBranch languageBranch, out string? hostName)
+    private bool TryGetHostName(PageData containerPage, out string? hostName)
     {
         var containerSiteDefinition = _siteDefinitionResolver.GetByContent(containerPage.ContentLink, false);
         if (containerSiteDefinition == null)
@@ -114,9 +114,7 @@ public class OptimizelyRssFeedDiscoveryService : IRssFeedDiscoveryService
             return false;
         }
 
-        var primaryHost = containerSiteDefinition.GetPrimaryHost(languageBranch.Culture);
-
-        hostName = primaryHost.Name;
+        hostName = containerSiteDefinition.Id.ToString("N");
 
         return true;
     }

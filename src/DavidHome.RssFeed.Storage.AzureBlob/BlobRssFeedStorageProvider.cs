@@ -28,7 +28,7 @@ public class BlobRssFeedStorageProvider : IRssFeedStorageProvider
         _feedOptions = feedOptions;
     }
 
-    public async Task Save(SyndicationFeed? feed, string? internalId = null, string? language = null, string? hostName = null)
+    public async Task Save(SyndicationFeed? feed, string? internalId = null, string? language = null, string? hostNameIdentifier = null)
     {
         var id = internalId ?? feed?.Id;
 
@@ -39,7 +39,7 @@ public class BlobRssFeedStorageProvider : IRssFeedStorageProvider
             return;
         }
 
-        var blobPath = GetBlobPath(language, hostName, id);
+        var blobPath = GetBlobPath(language, hostNameIdentifier, id);
         var blobClient = RssBlobContainer.GetBlobClient($"{blobPath}.xml");
         var rss20Formatter = feed.GetRss20Formatter(_feedOptions.CurrentValue.SerializeExtensionsAsAtom ?? false);
         await using var blobStream = await blobClient.OpenWriteAsync(true);
@@ -53,17 +53,17 @@ public class BlobRssFeedStorageProvider : IRssFeedStorageProvider
         _logger.LogInformation("Feed with ID {FeedId} has been saved successfully.", feed.Id);
     }
 
-    public async Task<Stream?> GetSavedStream(string id, string? language = null, string? hostName = null)
+    public async Task<Stream?> GetSavedStream(string id, string? language = null, string? hostNameIdentifier = null)
     {
-        var blobPath = GetBlobPath(language, hostName, id);
+        var blobPath = GetBlobPath(language, hostNameIdentifier, id);
         var blobClient = RssBlobContainer.GetBlobClient($"{blobPath}.xml");
 
         return await blobClient.ExistsAsync() ? await blobClient.OpenReadAsync() : null;
     }
 
-    private static string GetBlobPath(string? language, string? hostName, string id)
+    private static string GetBlobPath(string? language, string? hostNameIdentifier, string id)
     {
-        var feedIdentifiers = new[] { hostName, language, id }.Where(s => !string.IsNullOrEmpty(s));
+        var feedIdentifiers = new[] { hostNameIdentifier, language, id }.Where(s => !string.IsNullOrEmpty(s));
         var blobPath = string.Join('/', feedIdentifiers);
 
         return blobPath;
