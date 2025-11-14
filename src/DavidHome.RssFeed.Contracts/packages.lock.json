@@ -10,14 +10,14 @@
       },
       "System.ServiceModel.Syndication": {
         "type": "Direct",
-        "requested": "[8.0.0, )",
-        "resolved": "8.0.0",
-        "contentHash": "CJxIUwpBkMCPmIx46tFVOt0zpRrYurUHLW6tJBcmyj+MyWpKc6MMcS69B7IdlV/bgtgys073wMIHZX9QOQ1OFA=="
+        "requested": "[10.0.0, )",
+        "resolved": "10.0.0",
+        "contentHash": "HBrGaOQoEaDlMOykS/LfQr9BZ0pEF4SOcscH5oMpBF46+lqMMfgfat3Jm5SpW8IaDzzn/IakYjpWk3bEGSh1vA=="
       },
       "davidhome.rssfeed.models": {
         "type": "Project",
         "dependencies": {
-          "System.ServiceModel.Syndication": "[8.0.0, )"
+          "System.ServiceModel.Syndication": "[10.0.0, )"
         }
       }
     },
