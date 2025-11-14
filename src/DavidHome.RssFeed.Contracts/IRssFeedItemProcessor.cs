@@ -7,4 +7,4 @@ public interface IRssFeedItemProcessor : IRssFeedProcessor
     IEnumerable<IRssFeedSourceItem?> ManipulateEnumerable(IEnumerable<IRssFeedSourceItem?> feedModels) => feedModels;
 }
 
-public interface IRssFeedItemProcessor<TFeedItem> : IRssFeedItemProcessor where TFeedItem : IRssFeedItem;
+public interface IRssFeedItemProcessor<TFeedItem> : IRssFeedItemProcessor where TFeedItem : IRssFeedSourceItem;

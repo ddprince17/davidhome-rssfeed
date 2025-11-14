@@ -18,8 +18,8 @@ public static class OptimizelyRssFeedServiceBuilderExtensions
 {
     public static IRssFeedServiceBuilder AddContentPageFeed<TFeedContainer, TFeedItem>(this IRssFeedServiceBuilder serviceBuilder, IConfiguration configuration,
         params IReadOnlyCollection<Assembly> assembliesToScan)
-        where TFeedContainer : class, IRssFeedContainer<TFeedItem>, IContent
-        where TFeedItem : IRssFeedItem<TFeedContainer>, IContent
+        where TFeedContainer : class, IRssFeedSourceContainer<TFeedItem>, IContent
+        where TFeedItem : IRssFeedSourceItem<TFeedContainer>, IContent
     {
         var genericType = typeof(TFeedContainer);
         var genericTypeName = genericType.Name;
