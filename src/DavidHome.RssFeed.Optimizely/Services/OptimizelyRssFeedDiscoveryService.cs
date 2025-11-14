@@ -151,7 +151,7 @@ public class OptimizelyRssFeedDiscoveryService : IRssFeedDiscoveryService
 
     private Type? GetFeedItemType(Type? feedContainerType, Type routerType)
     {
-        var inheritedContainerInterface = feedContainerType?.GetInterfaces().FirstOrDefault(type => type.IsAssignableTo(typeof(IRssFeedContainer)));
+        var inheritedContainerInterface = feedContainerType?.GetInterfaces().FirstOrDefault(type => type.IsAssignableTo(typeof(IRssFeedSourceContainer)));
 
         if (inheritedContainerInterface is { IsConstructedGenericType: true })
         {
