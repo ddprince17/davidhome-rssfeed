@@ -36,32 +36,19 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
         return Task.FromResult(true);
     }
 
-    public Task PreProcess(IRssFeedSourceBase? feedModel)
+    public Task PreProcess(ref IRssFeedSourceBase? feedModel)
     {
-        IRssFeedItem rssFeedItem;
-        IContent? content;
-
-        switch (feedModel)
-        {
-            // ReSharper disable once SuspiciousTypeConversion.Global
-            case IContent sourceContent:
-                rssFeedItem = feedModel.CreateOrGetFeedItem();
-                content = sourceContent;
-                break;
-            case IRssFeedItem existingRssFeedItem and IContentRssFeed contentRssFeed:
-                rssFeedItem = existingRssFeedItem;
-                content = contentRssFeed.Content;
-                break;
-            default:
-                return Task.CompletedTask;
-        }
+        var rssFeedItem = feedModel?.TransformToFeedItem();
+        var content = (rssFeedItem as IContentRssFeed)?.Content;
 
         ProcessCommonOptimizelyProperties(rssFeedItem);
         AddItemCategories(rssFeedItem, content);
         SetFeedItemContent(rssFeedItem, content);
         // TODO: Will be completed in a later release.
         // rssFeedItem.Authors = CreateContentAuthors(content);
-
+        
+        feedModel = rssFeedItem;
+        
         return Task.CompletedTask;
     }
 
@@ -81,7 +68,7 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
         return Task.CompletedTask;
     }
 
-    private void AddItemCategories(IRssFeedItem rssFeedItem, IContent? content)
+    private void AddItemCategories(IRssFeedItem? rssFeedItem, IContent? content)
     {
         var categories = content is ICategorizable categorizable
             ? categorizable.Category
@@ -92,18 +79,18 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
 
         // We're just making sure we aren't adding the same categories twice.
         // Optimizely seems to be keeping ignored properties with their values intact throughout the whole application lifecycle.
-        rssFeedItem.RssCategories ??= new List<SyndicationCategory?>();
-        rssFeedItem.RssCategories.Clear();
+        rssFeedItem?.RssCategories ??= new List<SyndicationCategory?>();
+        rssFeedItem?.RssCategories?.Clear();
 
         foreach (var category in categories)
         {
-            rssFeedItem.RssCategories.Add(category);
+            rssFeedItem?.RssCategories?.Add(category);
         }
     }
 
-    private void SetFeedItemContent(IRssFeedItem rssFeedItem, IContent? content)
+    private void SetFeedItemContent(IRssFeedItem? rssFeedItem, IContent? content)
     {
-        var feedItemType = rssFeedItem.GetType().GetInterfaces().FirstOrDefault(type => type.IsAssignableTo(typeof(IRssFeedItem)));
+        var feedItemType = rssFeedItem?.GetType().GetInterfaces().FirstOrDefault(type => type.IsAssignableTo(typeof(IRssFeedItem)));
         Type? containerType = null;
 
         if (feedItemType is { IsConstructedGenericType: true })
@@ -122,7 +109,7 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
         var contentHtml = _optimizelyContentAreaService.RenderAsString(contentArea);
         var contentMaxLength = ContainerFeedOptions(containerType?.Name).ContentMaxLength ?? DefaultFeedOptions.ContentMaxLength ?? 1000000;
 
-        rssFeedItem.RssContent = new TextSyndicationContent(contentHtml.Ellipsis(contentMaxLength), TextSyndicationContentKind.Html);
+        rssFeedItem?.RssContent = new TextSyndicationContent(contentHtml.Ellipsis(contentMaxLength), TextSyndicationContentKind.Html);
     }
 
     private ICollection<SyndicationPerson?> CreateContentAuthors(IContent content)

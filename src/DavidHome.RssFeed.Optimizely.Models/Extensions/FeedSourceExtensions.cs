@@ -1,4 +1,5 @@
-﻿using System.ServiceModel.Syndication;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.ServiceModel.Syndication;
 using DavidHome.RssFeed.Models;
 using EPiServer.Core;
 
@@ -6,26 +7,29 @@ namespace DavidHome.RssFeed.Optimizely.Models.Extensions;
 
 public static class FeedSourceExtensions
 {
-    public static IRssFeedItem CreateOrGetFeedItem(this IRssFeedSourceBase sourceItem)
+    extension<T>(T sourceFeedBase) where T : IRssFeedSourceBase
     {
-        return sourceItem switch
+        [SuppressMessage("ReSharper", "SuspiciousTypeConversion.Global")]
+        public IRssFeedItem TransformToFeedItem()
         {
-            // ReSharper disable once SuspiciousTypeConversion.Global - Intended.
-            IContent sourceContent => new ContentRssFeedItem(sourceContent),
-            IRssFeedItem existingRssFeedItem and IContentRssFeed => existingRssFeedItem,
-            _ => throw new ArgumentOutOfRangeException(nameof(sourceItem), sourceItem, $"Could not retrieve Optimizely '{nameof(IContent)}' from the feed source item.")
-        };
-    }
+            return sourceFeedBase switch
+            {
+                IContent sourceContent => new ContentRssFeedItem(sourceContent),
+                IRssFeedItem existingRssFeedItem and IContentRssFeed => existingRssFeedItem,
+                _ => throw new ArgumentOutOfRangeException(nameof(sourceFeedBase), sourceFeedBase, $"Could not retrieve Optimizely '{nameof(IContent)}' from the feed source item.")
+            };
+        }
 
-    public static IRssFeedContainer CreateOrGetFeedContainer(this IRssFeedSourceBase sourceContainer)
-    {
-        return sourceContainer switch
+        [SuppressMessage("ReSharper", "SuspiciousTypeConversion.Global")]
+        public IRssFeedContainer TransformToFeedContainer()
         {
-            // ReSharper disable once SuspiciousTypeConversion.Global - Intended.
-            IContent sourceContent => new ContentRssFeedContainer(sourceContent),
-            IRssFeedContainer existingRssFeedContainer and IContentRssFeed => existingRssFeedContainer,
-            _ => throw new ArgumentOutOfRangeException(nameof(sourceContainer), sourceContainer, $"Could not retrieve Optimizely '{nameof(IContent)}' from the feed source container.")
-        };
+            return sourceFeedBase switch
+            {
+                IContent sourceContent => new ContentRssFeedContainer(sourceContent),
+                IRssFeedContainer existingRssFeedContainer and IContentRssFeed => existingRssFeedContainer,
+                _ => throw new ArgumentOutOfRangeException(nameof(sourceFeedBase), sourceFeedBase, $"Could not retrieve Optimizely '{nameof(IContent)}' from the feed source container.")
+            };
+        }
     }
 
     private class ContentRssFeedItem : IRssFeedItem, IContentRssFeed

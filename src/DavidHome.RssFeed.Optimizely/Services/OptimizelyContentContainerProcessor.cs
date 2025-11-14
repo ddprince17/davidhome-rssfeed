@@ -22,30 +22,17 @@ public class OptimizelyContentContainerProcessor : OptimizelyProcessorBase, IRss
         return Task.FromResult(true);
     }
 
-    public Task PreProcess(IRssFeedSourceBase? feedModel)
+    public Task PreProcess(ref IRssFeedSourceBase? feedModel)
     {
-        IRssFeedContainer rssFeedContainer;
-        IContent? content;
+        var feedContainer = feedModel?.TransformToFeedContainer();
+        var content = (feedContainer as IContentRssFeed)?.Content;
+        
+        ProcessCommonOptimizelyProperties(feedContainer);
 
-        switch (feedModel)
-        {
-            // ReSharper disable once SuspiciousTypeConversion.Global
-            case IContent sourceContent:
-                rssFeedContainer = feedModel.CreateOrGetFeedContainer();
-                content = sourceContent;
-                break;
-            case IRssFeedContainer existingRssFeedItem and IContentRssFeed contentRssFeed:
-                rssFeedContainer = existingRssFeedItem;
-                content = contentRssFeed.Content;
-                break;
-            default:
-                return Task.CompletedTask;
-        }
+        feedContainer?.RssInternalId = content?.ContentGuid.ToString("N");
 
-        ProcessCommonOptimizelyProperties(rssFeedContainer);
-
-        rssFeedContainer.RssInternalId = content?.ContentGuid.ToString("N");
-
+        feedModel = feedContainer;
+        
         return Task.CompletedTask;
     }
 
