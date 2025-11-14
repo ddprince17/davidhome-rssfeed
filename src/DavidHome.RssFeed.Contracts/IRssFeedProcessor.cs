@@ -4,7 +4,8 @@ namespace DavidHome.RssFeed.Contracts;
 
 public interface IRssFeedProcessor
 {
-    Task<bool> IsValidFeedModel(IRssFeedBase? feedModel);
-    Task PreProcess(IRssFeedBase? feedModel);
+    Task<bool> IsValidFeedModel(IRssFeedSourceBase? feedModel);
+    Task PreProcess(IRssFeedSourceBase? feedModel);
     Task PostProcess(IRssFeedBase? feedModel, object? syndicationModel);
+    void TransformSource(ref IRssFeedSourceBase? feedModel) { }
 }

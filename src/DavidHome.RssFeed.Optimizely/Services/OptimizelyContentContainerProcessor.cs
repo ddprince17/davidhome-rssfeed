@@ -2,6 +2,7 @@
 using DavidHome.RssFeed.Contracts;
 using DavidHome.RssFeed.Models;
 using DavidHome.RssFeed.Optimizely.Models;
+using DavidHome.RssFeed.Optimizely.Models.Extensions;
 using EPiServer.Core;
 using EPiServer.Web.Routing;
 
@@ -16,22 +17,21 @@ public class OptimizelyContentContainerProcessor : OptimizelyProcessorBase, IRss
         _urlResolver = urlResolver;
     }
 
-    public Task<bool> IsValidFeedModel(IRssFeedBase? feedModel)
+    public Task<bool> IsValidFeedModel(IRssFeedSourceBase? feedModel)
     {
         return Task.FromResult(true);
     }
 
-    public Task PreProcess(IRssFeedBase? feedModel)
+    public Task PreProcess(IRssFeedSourceBase? feedModel)
     {
-        ProcessCommonOptimizelyProperties(feedModel);
+        TransformSource(ref feedModel);
 
-        // ReSharper disable once SuspiciousTypeConversion.Global - This is expected and enforced in the initialization.
-        if (feedModel is not (IRssFeedContainer rssFeedContainer and IContent content))
-        {
-            return Task.CompletedTask;
-        }
+        var feedContainer = feedModel as IRssFeedContainer;
+        var content = (feedContainer as IContentRssFeed)?.Content;
 
-        rssFeedContainer.RssInternalId = content.ContentGuid.ToString("N");
+        ProcessCommonOptimizelyProperties(feedContainer);
+
+        feedContainer?.RssInternalId = content?.ContentGuid.ToString("N");
 
         return Task.CompletedTask;
     }
@@ -39,7 +39,7 @@ public class OptimizelyContentContainerProcessor : OptimizelyProcessorBase, IRss
     public Task PostProcess(IRssFeedBase? feedModel, object? syndicationModel)
     {
         // ReSharper disable once SuspiciousTypeConversion.Global -> Intended. It is enforced during initialization.
-        if (feedModel is not IContent content || syndicationModel is not SyndicationFeed syndicationFeed)
+        if (feedModel is not IContentRssFeed { Content: { } content } || syndicationModel is not SyndicationFeed syndicationFeed)
         {
             return Task.CompletedTask;
         }
@@ -52,5 +52,10 @@ public class OptimizelyContentContainerProcessor : OptimizelyProcessorBase, IRss
         }
 
         return Task.CompletedTask;
+    }
+
+    public void TransformSource(ref IRssFeedSourceBase? feedModel)
+    {
+        feedModel = feedModel?.TransformToFeedContainer();
     }
 }

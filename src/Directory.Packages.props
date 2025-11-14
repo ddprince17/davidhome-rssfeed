@@ -1,16 +1,17 @@
 <Project>
-  <PropertyGroup>
-    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageVersion Include="Azure.Storage.Blobs" Version="[12.11.0,13.0.0)" />
-    <PackageVersion Include="EPiServer.CMS.AspNetCore" Version="[12.4.0,13.0.0)" />
-    <PackageVersion Include="EPiServer.Cms.AspNetCore.Templating" Version="[12.4.0,13.0.0)" />
-    <PackageVersion Include="EPiServer.Cms.AspNetCore.HtmlHelpers" Version="[12.4.0,13.0.0)" />
-    <PackageVersion Include="EPiServer.CMS.Core" Version="[12.4.0,13.0.0)" />
-    <PackageVersion Include="GitVersion.MsBuild" Version="6.1.0" />
-    <PackageVersion Include="Microsoft.Extensions.Azure" Version="[1.0.0,2.0.0)" />
-    <PackageVersion Include="System.ServiceModel.Syndication" Version="[8.0.0,)" />
-  </ItemGroup>
+    <PropertyGroup>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+        <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageVersion Include="Azure.Storage.Blobs" Version="[12.11.0,13.0.0)"/>
+        <PackageVersion Include="EPiServer.CMS.AspNetCore" Version="[12.4.0,13.0.0)"/>
+        <PackageVersion Include="EPiServer.Cms.AspNetCore.Templating" Version="[12.4.0,13.0.0)"/>
+        <PackageVersion Include="EPiServer.Cms.AspNetCore.HtmlHelpers" Version="[12.4.0,13.0.0)"/>
+        <PackageVersion Include="EPiServer.CMS.Core" Version="[12.4.0,13.0.0)"/>
+        <PackageVersion Include="Microsoft.Extensions.Azure" Version="[1.0.0,2.0.0)"/>
+        <PackageVersion Include="System.ServiceModel.Syndication" Version="[8.0.0,)" Condition="'$(TargetFramework)' == 'net8.0'" />
+        <PackageVersion Include="System.ServiceModel.Syndication" Version="[10.0.0,)" Condition="'$(TargetFramework)' == 'net10.0'" />
+        <PackageVersion Include="GitVersion.MsBuild" Version="6.5.0" />
+    </ItemGroup>
 </Project>

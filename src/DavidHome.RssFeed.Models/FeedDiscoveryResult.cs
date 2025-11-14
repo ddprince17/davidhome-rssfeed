@@ -2,6 +2,8 @@
 
 public class FeedDiscoveryResult
 {
-    public IRssFeedContainer? FeedContainer { get; set; }
-    public IEnumerable<IRssFeedItem?>? FeedItems { get; set; }
+    public string? HostNameIdentifier { get; set; }
+    public string? Language { get; set; }
+    public IRssFeedSourceContainer? FeedContainer { get; set; }
+    public IEnumerable<IRssFeedSourceItem?>? FeedItems { get; set; }
 }

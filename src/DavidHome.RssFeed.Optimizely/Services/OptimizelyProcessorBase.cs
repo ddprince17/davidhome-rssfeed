@@ -1,6 +1,5 @@
-﻿using System.ServiceModel.Syndication;
-using DavidHome.RssFeed.Models;
-using EPiServer.Core;
+﻿using DavidHome.RssFeed.Models;
+using DavidHome.RssFeed.Optimizely.Models;
 using EPiServer.Web.Routing;
 
 namespace DavidHome.RssFeed.Optimizely.Services;
@@ -17,11 +16,12 @@ public abstract class OptimizelyProcessorBase
     protected void ProcessCommonOptimizelyProperties(IRssFeedBase? feedModel)
     {
         // ReSharper disable once SuspiciousTypeConversion.Global - This is expected and enforced in the initialization.
-        if (feedModel is not IContent content)
+        if (feedModel is not IContentRssFeed contentRssFeed)
         {
             return;
         }
 
+        var content = contentRssFeed.Content;
         var contentUrl = _urlResolver.GetUrl(content);
 
         // Assuming this is absolute. Technically it should if the scheduled job is not running under the http context of the user.
@@ -33,10 +33,9 @@ public abstract class OptimizelyProcessorBase
 
         if (string.IsNullOrEmpty(feedModel.RssId))
         {
-            feedModel.RssId = content.ContentGuid.ToString("N");
+            feedModel.RssId = content?.ContentGuid.ToString("N");
         }
 
-        feedModel.RssTitle = content.Name;
-        feedModel.RssLastUpdatedTime = content is IChangeTrackable changeTrackable ? changeTrackable.Saved.ToUniversalTime() : null;
+        feedModel.RssTitle = content?.Name;
     }
 }

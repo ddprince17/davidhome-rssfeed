@@ -2,6 +2,7 @@
 using DavidHome.RssFeed.Contracts;
 using DavidHome.RssFeed.Models;
 using DavidHome.RssFeed.Optimizely.Contracts;
+using DavidHome.RssFeed.Optimizely.Models;
 using DavidHome.RssFeed.Optimizely.Models.Options;
 using DavidHome.RssFeed.Optimizely.Routing;
 using DavidHome.RssFeed.Optimizely.Services;
@@ -18,8 +19,8 @@ public static class OptimizelyRssFeedServiceBuilderExtensions
 {
     public static IRssFeedServiceBuilder AddContentPageFeed<TFeedContainer, TFeedItem>(this IRssFeedServiceBuilder serviceBuilder, IConfiguration configuration,
         params IReadOnlyCollection<Assembly> assembliesToScan)
-        where TFeedContainer : class, IRssFeedContainer<TFeedItem>, IContent
-        where TFeedItem : IRssFeedItem<TFeedContainer>, IContent
+        where TFeedContainer : class, IRssFeedSourceContainer<TFeedItem>, IContent, IContentRssFeed
+        where TFeedItem : IRssFeedSourceItem<TFeedContainer>, IContent, IContentRssFeed
     {
         var genericType = typeof(TFeedContainer);
         var genericTypeName = genericType.Name;
@@ -72,6 +73,7 @@ public static class OptimizelyRssFeedServiceBuilderExtensions
         serviceBuilder.Services
             .Configure<RssFeedOptimizelyOptions>(rssFeedConfiguration)
             .AddTransient<IOptimizelyContentAreaService, OptimizelyContentAreaService>()
+            .AddTransient<IOptimizelyContentService, OptimizelyContentService>()
             .AddTransient<IOptimizelySyndicationLinkService, OptimizelySyndicationLinkService>();
 
         return serviceBuilder;

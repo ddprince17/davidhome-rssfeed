@@ -35,7 +35,12 @@ public class RssFeedGeneratorScheduledJob : ScheduledJobBase
         {
             foreach (var rssFeedStorageProvider in _rssFeedStorageProviders)
             {
-                await rssFeedStorageProvider.Save(feedResult.Feed, feedResult.Id);
+                if (feedResult is null)
+                {
+                    continue;
+                }
+
+                await rssFeedStorageProvider.Save(feedResult.Feed, feedResult.Id, feedResult.Language, feedResult.HostNameIdentifier);
             }
         }
     }

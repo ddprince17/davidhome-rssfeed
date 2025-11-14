@@ -3,6 +3,8 @@ using DavidHome.RssFeed.Contracts;
 using DavidHome.RssFeed.Contracts.Extensions;
 using DavidHome.RssFeed.Models;
 using DavidHome.RssFeed.Optimizely.Contracts;
+using DavidHome.RssFeed.Optimizely.Models;
+using DavidHome.RssFeed.Optimizely.Models.Extensions;
 using DavidHome.RssFeed.Optimizely.Models.Options;
 using EPiServer.Core;
 using EPiServer.DataAbstraction;
@@ -15,35 +17,34 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
 {
     private readonly CategoryRepository _categoryRepository;
     private readonly IContentVersionRepository _contentVersionRepository;
-    private readonly IOptimizelyContentAreaService _optimizelyContentAreaService;
     private readonly IOptionsMonitor<RssFeedOptimizelyOptions> _feedOptions;
+    private readonly IOptimizelyContentService _optimizelyContentService;
+
     private RssFeedOptimizelyOptions DefaultFeedOptions => _feedOptions.CurrentValue;
     private RssFeedOptimizelyOptions ContainerFeedOptions(string? containerName) => _feedOptions.Get(containerName);
 
     public OptimizelyContentItemProcessor(IUrlResolver urlResolver, CategoryRepository categoryRepository, IContentVersionRepository contentVersionRepository,
-        IOptimizelyContentAreaService optimizelyContentAreaService, IOptionsMonitor<RssFeedOptimizelyOptions> feedOptions) : base(urlResolver)
+        IOptionsMonitor<RssFeedOptimizelyOptions> feedOptions, IOptimizelyContentService optimizelyContentService) : base(urlResolver)
     {
         _categoryRepository = categoryRepository;
         _contentVersionRepository = contentVersionRepository;
-        _optimizelyContentAreaService = optimizelyContentAreaService;
         _feedOptions = feedOptions;
+        _optimizelyContentService = optimizelyContentService;
     }
 
-    public Task<bool> IsValidFeedModel(IRssFeedBase? feedModel)
+    public Task<bool> IsValidFeedModel(IRssFeedSourceBase? feedModel)
     {
         return Task.FromResult(true);
     }
 
-    public Task PreProcess(IRssFeedBase? feedModel)
+    public Task PreProcess(IRssFeedSourceBase? feedModel)
     {
-        ProcessCommonOptimizelyProperties(feedModel);
+        TransformSource(ref feedModel);
 
-        // ReSharper disable once SuspiciousTypeConversion.Global - This is expected and enforced in the initialization.
-        if (feedModel is not (IRssFeedItem rssFeedItem and IContent content))
-        {
-            return Task.CompletedTask;
-        }
+        var rssFeedItem = feedModel as IRssFeedItem;
+        var content = (rssFeedItem as IContentRssFeed)?.Content;
 
+        ProcessCommonOptimizelyProperties(rssFeedItem);
         AddItemCategories(rssFeedItem, content);
         SetFeedItemContent(rssFeedItem, content);
         // TODO: Will be completed in a later release.
@@ -55,7 +56,7 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
     public Task PostProcess(IRssFeedBase? feedModel, object? syndicationModel)
     {
         // ReSharper disable once SuspiciousTypeConversion.Global -> This is expected and enforced in the initialization.
-        if (feedModel is not IVersionable versionable || syndicationModel is not SyndicationItem syndicationItem)
+        if (feedModel is not IContentRssFeed { Content: IVersionable versionable } || syndicationModel is not SyndicationItem syndicationItem)
         {
             return Task.CompletedTask;
         }
@@ -68,7 +69,7 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
         return Task.CompletedTask;
     }
 
-    private void AddItemCategories(IRssFeedItem rssFeedItem, IContent content)
+    private void AddItemCategories(IRssFeedItem? rssFeedItem, IContent? content)
     {
         var categories = content is ICategorizable categorizable
             ? categorizable.Category
@@ -79,23 +80,22 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
 
         // We're just making sure we aren't adding the same categories twice.
         // Optimizely seems to be keeping ignored properties with their values intact throughout the whole application lifecycle.
-        rssFeedItem.RssCategories ??= new List<SyndicationCategory?>();
-        rssFeedItem.RssCategories.Clear();
+        rssFeedItem?.RssCategories ??= new List<SyndicationCategory?>();
+        rssFeedItem?.RssCategories?.Clear();
 
         foreach (var category in categories)
         {
-            rssFeedItem.RssCategories.Add(category);
+            rssFeedItem?.RssCategories?.Add(category);
         }
     }
 
-    private void SetFeedItemContent(IRssFeedItem rssFeedItem, IContent content)
+    private void SetFeedItemContent(IRssFeedItem? rssFeedItem, IContent? content)
     {
-        var feedItemType = rssFeedItem.GetType().GetInterfaces().FirstOrDefault(type => type.IsAssignableTo(typeof(IRssFeedItem)));
         Type? containerType = null;
 
-        if (feedItemType is { IsConstructedGenericType: true })
+        if (rssFeedItem is IFeedItemContainerIdentifiable { ContainerType: not null } containerIdentifiable)
         {
-            containerType = feedItemType.GenericTypeArguments.First();
+            containerType = containerIdentifiable.ContainerType;
         }
 
         var contentPropertyName = ContainerFeedOptions(containerType?.Name).ContentAreaPropertyName ?? DefaultFeedOptions.ContentAreaPropertyName;
@@ -105,13 +105,14 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
             return;
         }
 
-        var contentArea = content.Property[contentPropertyName]?.Value as ContentArea;
-        var contentHtml = _optimizelyContentAreaService.RenderAsString(contentArea);
+        var contentHtml = _optimizelyContentService.GetContentHtml(content, contentPropertyName);
         var contentMaxLength = ContainerFeedOptions(containerType?.Name).ContentMaxLength ?? DefaultFeedOptions.ContentMaxLength ?? 1000000;
 
-        rssFeedItem.RssContent = new TextSyndicationContent(contentHtml.Ellipsis(contentMaxLength), TextSyndicationContentKind.Html);
+        rssFeedItem?.RssContent = new TextSyndicationContent(contentHtml.Ellipsis(contentMaxLength), TextSyndicationContentKind.Html);
     }
-    
+
+
+
     private ICollection<SyndicationPerson?> CreateContentAuthors(IContent content)
     {
         var versionFilter = new VersionFilter
@@ -129,5 +130,10 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
         // var contentAuthors = contentVersions.Select(version => version.SavedBy).Distinct().Select(name => new SyndicationPerson(name));
 
         throw new NotImplementedException();
+    }
+
+    public void TransformSource(ref IRssFeedSourceBase? feedModel)
+    {
+        feedModel = feedModel?.TransformToFeedItem();
     }
 }

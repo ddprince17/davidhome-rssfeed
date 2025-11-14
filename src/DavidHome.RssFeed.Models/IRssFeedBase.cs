@@ -1,6 +1,6 @@
 ﻿namespace DavidHome.RssFeed.Models;
 
-public interface IRssFeedBase
+public interface IRssFeedBase : IRssFeedSourceBase
 {
     string? RssId { get; set; }
     string? RssTitle { get; set; }

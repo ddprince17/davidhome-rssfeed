@@ -7,6 +7,6 @@ namespace DavidHome.RssFeed.Contracts;
 /// </summary>
 public interface IRssFeedStorageProvider
 {
-    Task Save(SyndicationFeed? feed, string? internalId = null);
-    Task<Stream?> GetSavedStream(string id);
+    Task Save(SyndicationFeed? feed, string? internalId = null, string? language = null, string? hostNameIdentifier = null);
+    Task<Stream?> GetSavedStream(string id, string? language, string? hostNameIdentifier);
 }
