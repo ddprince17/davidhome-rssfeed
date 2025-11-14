@@ -73,6 +73,7 @@ public static class OptimizelyRssFeedServiceBuilderExtensions
         serviceBuilder.Services
             .Configure<RssFeedOptimizelyOptions>(rssFeedConfiguration)
             .AddTransient<IOptimizelyContentAreaService, OptimizelyContentAreaService>()
+            .AddTransient<IOptimizelyContentService, OptimizelyContentService>()
             .AddTransient<IOptimizelySyndicationLinkService, OptimizelySyndicationLinkService>();
 
         return serviceBuilder;
