@@ -1,5 +1,4 @@
-﻿using System.Globalization;
-using DavidHome.RssFeed.Contracts;
+﻿using DavidHome.RssFeed.Contracts;
 using DavidHome.RssFeed.Models;
 using DavidHome.RssFeed.Optimizely.Models.Options;
 using DavidHome.RssFeed.Optimizely.Routing;

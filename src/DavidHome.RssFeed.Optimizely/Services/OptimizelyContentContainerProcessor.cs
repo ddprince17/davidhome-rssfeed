@@ -2,6 +2,7 @@
 using DavidHome.RssFeed.Contracts;
 using DavidHome.RssFeed.Models;
 using DavidHome.RssFeed.Optimizely.Models;
+using DavidHome.RssFeed.Optimizely.Models.Extensions;
 using EPiServer.Core;
 using EPiServer.Web.Routing;
 
@@ -24,13 +25,13 @@ public class OptimizelyContentContainerProcessor : OptimizelyProcessorBase, IRss
     public Task PreProcess(IRssFeedSourceBase? feedModel)
     {
         IRssFeedContainer rssFeedContainer;
-        IContent content;
+        IContent? content;
 
         switch (feedModel)
         {
             // ReSharper disable once SuspiciousTypeConversion.Global
             case IContent sourceContent:
-                rssFeedContainer = new ContentRssFeedContainer(sourceContent);
+                rssFeedContainer = feedModel.CreateOrGetFeedContainer();
                 content = sourceContent;
                 break;
             case IRssFeedContainer existingRssFeedItem and IContentRssFeed contentRssFeed:
@@ -43,7 +44,7 @@ public class OptimizelyContentContainerProcessor : OptimizelyProcessorBase, IRss
 
         ProcessCommonOptimizelyProperties(rssFeedContainer);
 
-        rssFeedContainer.RssInternalId = content.ContentGuid.ToString("N");
+        rssFeedContainer.RssInternalId = content?.ContentGuid.ToString("N");
 
         return Task.CompletedTask;
     }
@@ -64,21 +65,5 @@ public class OptimizelyContentContainerProcessor : OptimizelyProcessorBase, IRss
         }
 
         return Task.CompletedTask;
-    }
-
-    private class ContentRssFeedContainer : IRssFeedContainer, IContentRssFeed
-    {
-        public IContent Content { get; }
-        public string? RssId { get; set; }
-        public string? RssTitle { get; set; }
-        public Uri? RssAlternateLink { get; set; }
-        public DateTimeOffset? RssLastUpdatedTime { get; set; }
-        public string? RssInternalId { get; set; }
-        public string? RssDescription { get; set; }
-
-        public ContentRssFeedContainer(IContent content)
-        {
-            Content = content;
-        }
     }
 }

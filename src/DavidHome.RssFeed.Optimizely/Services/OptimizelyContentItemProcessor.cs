@@ -3,6 +3,8 @@ using DavidHome.RssFeed.Contracts;
 using DavidHome.RssFeed.Contracts.Extensions;
 using DavidHome.RssFeed.Models;
 using DavidHome.RssFeed.Optimizely.Contracts;
+using DavidHome.RssFeed.Optimizely.Models;
+using DavidHome.RssFeed.Optimizely.Models.Extensions;
 using DavidHome.RssFeed.Optimizely.Models.Options;
 using EPiServer.Core;
 using EPiServer.DataAbstraction;
@@ -37,13 +39,13 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
     public Task PreProcess(IRssFeedSourceBase? feedModel)
     {
         IRssFeedItem rssFeedItem;
-        IContent content;
+        IContent? content;
 
         switch (feedModel)
         {
             // ReSharper disable once SuspiciousTypeConversion.Global
             case IContent sourceContent:
-                rssFeedItem = new ContentRssFeedItem(sourceContent);
+                rssFeedItem = feedModel.CreateOrGetFeedItem();
                 content = sourceContent;
                 break;
             case IRssFeedItem existingRssFeedItem and IContentRssFeed contentRssFeed:
@@ -79,7 +81,7 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
         return Task.CompletedTask;
     }
 
-    private void AddItemCategories(IRssFeedItem rssFeedItem, IContent content)
+    private void AddItemCategories(IRssFeedItem rssFeedItem, IContent? content)
     {
         var categories = content is ICategorizable categorizable
             ? categorizable.Category
@@ -99,7 +101,7 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
         }
     }
 
-    private void SetFeedItemContent(IRssFeedItem rssFeedItem, IContent content)
+    private void SetFeedItemContent(IRssFeedItem rssFeedItem, IContent? content)
     {
         var feedItemType = rssFeedItem.GetType().GetInterfaces().FirstOrDefault(type => type.IsAssignableTo(typeof(IRssFeedItem)));
         Type? containerType = null;
@@ -116,7 +118,7 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
             return;
         }
 
-        var contentArea = content.Property[contentPropertyName]?.Value as ContentArea;
+        var contentArea = content?.Property[contentPropertyName]?.Value as ContentArea;
         var contentHtml = _optimizelyContentAreaService.RenderAsString(contentArea);
         var contentMaxLength = ContainerFeedOptions(containerType?.Name).ContentMaxLength ?? DefaultFeedOptions.ContentMaxLength ?? 1000000;
 
@@ -140,22 +142,5 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
         // var contentAuthors = contentVersions.Select(version => version.SavedBy).Distinct().Select(name => new SyndicationPerson(name));
 
         throw new NotImplementedException();
-    }
-
-    private class ContentRssFeedItem : IRssFeedItem, IContentRssFeed
-    {
-        public IContent Content { get; }
-        public string? RssId { get; set; }
-        public string? RssTitle { get; set; }
-        public Uri? RssAlternateLink { get; set; }
-        public DateTimeOffset? RssLastUpdatedTime { get; set; }
-        public SyndicationContent? RssContent { get; set; }
-        public ICollection<SyndicationCategory?>? RssCategories { get; set; }
-        public ICollection<SyndicationPerson?>? RssAuthors { get; set; }
-
-        public ContentRssFeedItem(IContent content)
-        {
-            Content = content;
-        }
     }
 }

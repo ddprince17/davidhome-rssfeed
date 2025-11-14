@@ -396,7 +396,8 @@
       "davidhome.rssfeed.optimizely.models": {
         "type": "Project",
         "dependencies": {
-          "DavidHome.RssFeed.Models": "[1.0.0, )"
+          "DavidHome.RssFeed.Models": "[1.0.0, )",
+          "EPiServer.CMS.Core": "[12.4.0, 13.0.0)"
         }
       },
       "EPiServer.CMS.AspNetCore": {
@@ -836,7 +837,8 @@
       "davidhome.rssfeed.optimizely.models": {
         "type": "Project",
         "dependencies": {
-          "DavidHome.RssFeed.Models": "[1.0.0, )"
+          "DavidHome.RssFeed.Models": "[1.0.0, )",
+          "EPiServer.CMS.Core": "[12.4.0, 13.0.0)"
         }
       },
       "EPiServer.CMS.AspNetCore": {

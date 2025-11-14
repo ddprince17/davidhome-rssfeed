@@ -1,6 +1,5 @@
-﻿using System.ServiceModel.Syndication;
-using DavidHome.RssFeed.Models;
-using EPiServer.Core;
+﻿using DavidHome.RssFeed.Models;
+using DavidHome.RssFeed.Optimizely.Models;
 using EPiServer.Web.Routing;
 
 namespace DavidHome.RssFeed.Optimizely.Services;
@@ -34,9 +33,9 @@ public abstract class OptimizelyProcessorBase
 
         if (string.IsNullOrEmpty(feedModel.RssId))
         {
-            feedModel.RssId = content.ContentGuid.ToString("N");
+            feedModel.RssId = content?.ContentGuid.ToString("N");
         }
 
-        feedModel.RssTitle = content.Name;
+        feedModel.RssTitle = content?.Name;
     }
 }
