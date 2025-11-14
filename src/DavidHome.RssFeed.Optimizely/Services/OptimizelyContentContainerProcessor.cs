@@ -39,7 +39,7 @@ public class OptimizelyContentContainerProcessor : OptimizelyProcessorBase, IRss
     public Task PostProcess(IRssFeedBase? feedModel, object? syndicationModel)
     {
         // ReSharper disable once SuspiciousTypeConversion.Global -> Intended. It is enforced during initialization.
-        if (feedModel is not IContent content || syndicationModel is not SyndicationFeed syndicationFeed)
+        if (feedModel is not IContentRssFeed { Content: { } content } || syndicationModel is not SyndicationFeed syndicationFeed)
         {
             return Task.CompletedTask;
         }

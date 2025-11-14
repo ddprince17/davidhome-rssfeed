@@ -55,7 +55,7 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
     public Task PostProcess(IRssFeedBase? feedModel, object? syndicationModel)
     {
         // ReSharper disable once SuspiciousTypeConversion.Global -> This is expected and enforced in the initialization.
-        if (feedModel is not IVersionable versionable || syndicationModel is not SyndicationItem syndicationItem)
+        if (feedModel is not IContentRssFeed { Content: IVersionable versionable } || syndicationModel is not SyndicationItem syndicationItem)
         {
             return Task.CompletedTask;
         }
