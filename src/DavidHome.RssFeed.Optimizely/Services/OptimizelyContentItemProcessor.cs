@@ -94,12 +94,11 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
 
     private void SetFeedItemContent(IRssFeedItem? rssFeedItem, IContent? content)
     {
-        var feedItemType = rssFeedItem?.GetType().GetInterfaces().FirstOrDefault(type => type.IsAssignableTo(typeof(IRssFeedItem)));
         Type? containerType = null;
 
-        if (feedItemType is { IsConstructedGenericType: true })
+        if (rssFeedItem is IFeedItemContainerIdentifiable { ContainerType: not null } containerIdentifiable)
         {
-            containerType = feedItemType.GenericTypeArguments.First();
+            containerType = containerIdentifiable.ContainerType;
         }
 
         var contentPropertyName = ContainerFeedOptions(containerType?.Name).ContentAreaPropertyName ?? DefaultFeedOptions.ContentAreaPropertyName;
