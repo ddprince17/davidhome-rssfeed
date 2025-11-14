@@ -1,3 +1,5 @@
+⚠️ Important: This release introduces breaking API changes since 1.2.0 (interfaces and method signatures for builders, processors, and storage providers). See `CHANGELOG` for migration details.
+
 ## Getting started
 
 * Install the NuGet package 'DavidHome.RssFeed.Optimizely'

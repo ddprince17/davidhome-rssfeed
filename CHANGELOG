@@ -1,0 +1,43 @@
+Changes Since 1.2.0
+
+Breaking Changes
+
+- IRssFeedBuilder.BuildFeeds now returns IAsyncEnumerable<SyndicationFeedResult?> (nullable items). Callers should handle possible null results.
+- IRssFeedProcessor method signatures changed:
+  - IsValidFeedModel(IRssFeedSourceBase? feedModel) (was IRssFeedBase?).
+  - PreProcess(IRssFeedSourceBase? feedModel) (was IRssFeedBase?).
+  - PostProcess(IRssFeedBase? feedModel, object? syndicationModel) unchanged.
+- IRssFeedItemProcessor.ManipulateEnumerable now operates on IEnumerable<IRssFeedSourceItem?> (was IEnumerable<IRssFeedItem?>).
+- IRssFeedStorageProvider method signatures changed to be language/host aware:
+  - Task Save(SyndicationFeed? feed, string? internalId = null, string? language = null, string? hostName = null).
+  - Task<Stream?> GetSavedStream(string id, string? language, string? hostName).
+  Existing consumers must pass the appropriate language and host name when saving/retrieving. Stored blob paths now include hostName/language/id.xml.
+- Model/interface changes introducing new “source” abstractions:
+  - New: IRssFeedSourceBase, IRssFeedSourceContainer, IRssFeedSourceItem.
+  - IRssFeedBase now extends IRssFeedSourceBase.
+  Processors are expected to convert source instances to concrete IRssFeedContainer/IRssFeedItem as part of pre-processing.
+
+Added Features
+
+- Multi-language and host-aware feeds:
+  - Feed discovery runs per enabled language and per site host.
+  - FeedDiscoveryResult now includes Language and HostNameIdentifier.
+  - SyndicationFeedResult now includes Language and HostNameIdentifier.
+- Refactored Optimizely feed discovery to use IPageCriteriaQueryable, ILanguageBranchRepository and ISiteDefinitionResolver, with published-date sorting and per-feed item limits.
+- Azure Blob storage provider saves and retrieves under hostName/language/id.xml for clearer separation across sites/languages.
+- RssFeedBuilder improvements:
+  - Computes feed LastUpdatedTime from items when available.
+  - Adds logging and null-safety if pre-processing does not yield expected IRssFeedContainer/IRssFeedItem implementations.
+- New internal helper IContentRssFeed to carry underlying IContent during processing.
+
+Other Changes
+
+- Multi-targeting and language version:
+  - Target frameworks set to net8.0;net10.0.
+  - C# language version updated to 14.
+- Package and build updates (highlights):
+  - GitVersion.MsBuild → 6.5.0.
+  - Added: Azure.Identity, Microsoft.Data.SqlClient, SixLabors.ImageSharp, System.IO.Packaging.
+- Repository metadata updated to GitHub URL in Directory.Build.props.
+- Minor CI and documentation updates.
+
