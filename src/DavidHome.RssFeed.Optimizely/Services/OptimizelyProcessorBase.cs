@@ -38,6 +38,5 @@ public abstract class OptimizelyProcessorBase
         }
 
         feedModel.RssTitle = content.Name;
-        feedModel.RssLastUpdatedTime = content is IChangeTrackable changeTrackable ? changeTrackable.Saved.ToUniversalTime() : null;
     }
 }

@@ -4,5 +4,5 @@ namespace DavidHome.RssFeed.Contracts;
 
 public interface IRssFeedBuilder
 {
-    IAsyncEnumerable<SyndicationFeedResult> BuildFeeds();
+    IAsyncEnumerable<SyndicationFeedResult?> BuildFeeds();
 }
