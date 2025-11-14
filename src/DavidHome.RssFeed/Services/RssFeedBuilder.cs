@@ -120,9 +120,7 @@ public class RssFeedBuilder : IRssFeedBuilder
         {
             if (await rssFeedContainerProcessor.IsValidFeedModel(feedContainer))
             {
-                IRssFeedSourceBase? castedFeedContainer = feedContainer;
-                
-                await rssFeedContainerProcessor.PreProcess(ref castedFeedContainer);
+                await rssFeedContainerProcessor.PreProcess(feedContainer);
             }
         }
     }
@@ -144,9 +142,7 @@ public class RssFeedBuilder : IRssFeedBuilder
         {
             if (await rssFeedItemProcessor.IsValidFeedModel(item))
             {
-                IRssFeedSourceBase? castedItem = item;
-                
-                await rssFeedItemProcessor.PreProcess(ref castedItem);
+                await rssFeedItemProcessor.PreProcess(item);
             }
         }
     }

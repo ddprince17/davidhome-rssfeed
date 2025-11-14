@@ -7,7 +7,7 @@ namespace DavidHome.RssFeed.Optimizely.Models.Extensions;
 
 public static class FeedSourceExtensions
 {
-    extension<T>(T sourceFeedBase) where T : IRssFeedSourceBase
+    extension<T>(T? sourceFeedBase) where T : IRssFeedSourceBase
     {
         [SuppressMessage("ReSharper", "SuspiciousTypeConversion.Global")]
         public IRssFeedItem TransformToFeedItem()

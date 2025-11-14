@@ -36,9 +36,9 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
         return Task.FromResult(true);
     }
 
-    public Task PreProcess(ref IRssFeedSourceBase? feedModel)
+    public Task PreProcess(IRssFeedSourceBase? feedModel)
     {
-        var rssFeedItem = feedModel?.TransformToFeedItem();
+        var rssFeedItem = TransformSource<IRssFeedItem>(ref feedModel);
         var content = (rssFeedItem as IContentRssFeed)?.Content;
 
         ProcessCommonOptimizelyProperties(rssFeedItem);
@@ -46,8 +46,6 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
         SetFeedItemContent(rssFeedItem, content);
         // TODO: Will be completed in a later release.
         // rssFeedItem.Authors = CreateContentAuthors(content);
-        
-        feedModel = rssFeedItem;
         
         return Task.CompletedTask;
     }
@@ -129,5 +127,10 @@ public class OptimizelyContentItemProcessor : OptimizelyProcessorBase, IRssFeedI
         // var contentAuthors = contentVersions.Select(version => version.SavedBy).Distinct().Select(name => new SyndicationPerson(name));
 
         throw new NotImplementedException();
+    }
+    
+    public T? TransformSource<T>(ref IRssFeedSourceBase? feedModel) where T : IRssFeedSourceBase
+    {
+        return (T?)(feedModel = feedModel?.TransformToFeedItem());
     }
 }
