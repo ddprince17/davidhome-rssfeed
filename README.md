@@ -1,68 +1,127 @@
 ⚠️ Important: This release introduces breaking API changes since 1.2.0 (interfaces and method signatures for builders, processors, and storage providers). See `CHANGELOG` for migration details.
 
-## Getting started
+## Packages you need
+- `DavidHome.RssFeed` is the base library that contains builders, processors, discovery contracts and models.
+- `DavidHome.RssFeed.Optimizely` adds Optimizely discovery, processors, routing and the scheduled job described below.
+- `DavidHome.RssFeed.Storage.AzureBlob` persists generated feeds in Azure Blob Storage.
 
-* Install the NuGet package 'DavidHome.RssFeed.Optimizely'
-* On a service collection, typically under your Startup.cs file or Program.cs, call ``AddDavidHomeRssFeed()`` with an instance of IConfiguration. This will return a RSS feed service builder. 
-	* Use it to make a call onto ``AddOptimizelyFeedIntegration()``, still with an instance of IConfiguration
-	* Call ``AddDefaultOptimizelyProcessors()`` to add the out of the box processors which automatically process your content data to something ingestable with the plugin when it builds your RSS feed. You can also omit its declaration and create your own processors. More on the subject later.
-	* Call ``AddContentPageFeed<TContainer, TItem>()`` as many time as desired. This will flag the desired content types to be taken into account during the generation of RSS. 
-* Install 'DavidHome.RssFeed.Storage.AzureBlob' to obtain blob container storage. 
-	* Call ``AddAzureBlobStorage()`` to add its support integrated to the RSS feed mechanisms. An IConfiguration instance is required, which must contain the configuration for your storage account. Providing direct access to the connection string is enough in this situation. More details in the next sections. 
-  * Call ``UseAzureBlobRssFeed()`` on an instance of ``IApplicationBuilder`` to make sure to properly initialize the storage container. It basically makes sure to create the container if it doesn't exist, thus avoiding to make this call each time accessing it. 
+Install the packages your scenario requires (for Optimizely you typically reference all three).
 
-## Configuration
+## Registering the services
+Add the feed services during startup:
 
-This plugin uses a configuration less approach, where the default should normally be enough. You can do personalize your settings by changing your appsettings.json or any other places where you have configured a custom configuration provider in your application. The structure is as followed: 
+```csharp
+using DavidHome.RssFeed.Contracts;
+using Microsoft.Extensions.DependencyInjection;
+
+public class Startup
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services
+            .AddDavidHomeRssFeed(Configuration)
+            .AddOptimizelyFeedIntegration(Configuration)
+            .AddDefaultOptimizelyProcessors()
+            // Register each feed container/feed item pair that should expose a feed.
+            .AddContentPageFeed<ArticleFeedContainerPage, ArticleFeedItemPage>(
+                Configuration,
+                new[] { typeof(ArticleFeedContainerPage).Assembly, typeof(ArticleFeedItemProcessor).Assembly })
+            // Optional storage provider(s).
+            .AddAzureBlobStorage(Configuration.GetSection("ConnectionStrings:EPiServerAzureBlobs"));
+    }
+
+    public void Configure(IApplicationBuilder app)
+    {
+        // Ensures the Blob container exists at startup.
+        app.UseAzureBlobRssFeed();
+    }
+}
+```
+
+Key points:
+- `AddDavidHomeRssFeed` wires `IRssFeedBuilder` and binds `DavidHome:RssFeed` options.
+- `AddOptimizelyFeedIntegration` registers discovery, routing and Optimizely helper services.
+- `AddDefaultOptimizelyProcessors` adds the provided processors. Call it **before** `AddContentPageFeed` if you want to override any processor registrations with your own implementations.
+- `AddContentPageFeed<TContainer, TItem>(..., params IReadOnlyCollection<Assembly> assembliesToScan)` associates a container/item pair and scans assemblies for `IRssFeedContainerProcessor`/`IRssFeedItemProcessor` implementations. Pass every assembly that contains processors you want registered.
+- Register one or many `IRssFeedStorageProvider` implementations (`AddAzureBlobStorage` shown above, or a custom provider).
+
+## Content type setup
+For each pair of content types that should produce a feed:
+
+1. Implement the marker interfaces `IRssFeedSourceContainer<TFeedItem>` on the container type and `IRssFeedSourceItem<TFeedContainer>` on the item type. These are the types that `AddContentPageFeed` registers.
+2. Implement `IContentRssFeed` so the Optimizely processors can access `IContent`. No RSS-specific properties need to be added to the content types in 2.0.0.
+
+```csharp
+[ContentType(DisplayName = "Article Feed Container", GUID = "00000000-0000-0000-0000-000000000001")]
+public class ArticleFeedContainerPage : PageData, IRssFeedSourceContainer<ArticlePage>, IContentRssFeed
+{
+}
+
+[ContentType(DisplayName = "Article", GUID = "00000000-0000-0000-0000-000000000002")]
+public class ArticlePage : PageData, IRssFeedSourceItem<ArticleFeedContainerPage>, IContentRssFeed
+{
+}
+```
+
+The default processors (`OptimizelyContentContainerProcessor` and `OptimizelyContentItemProcessor`) convert your Optimizely content into the runtime `IRssFeedContainer`/`IRssFeedItem` implementations and set all required metadata at runtime, but you can supply additional processors to enrich or override values. If you define a processor with generic parameters that match the feed types (`IRssFeedItemProcessor<ArticlePage>` for example), register it in one of the assemblies supplied to `AddContentPageFeed`.
+
+## Configuration reference
+The library reads its settings from `DavidHome:RssFeed` in your configuration. A single set of defaults applies to every feed, and a child object named after a container type overrides values for that feed only.
+
 ```json
 {
   "DavidHome": {
     "RssFeed": {
       "SerializeExtensionsAsAtom": false,
       "ContentMaxLength": 25000000,
-      "MyCustomContainerPageTypeName": {
+      "MaxSyndicationItems": 50,
+      "ContentAreaPropertyName": "MainContentArea",
+      "ArticleFeedContainerPage": {
         "ContentMaxLength": 15000000,
         "ContentAreaPropertyName": "MainContentArea",
-        "FeedTitlePropertyName": "HeadTitle"
-      },
-      "AnotherPageType": {
-        "ContentAreaPropertyName": "Content",
-        "FeedTitlePropertyName": "Title"
+        "FeedTitlePropertyName": "HeadTitle",
+        "MaxSyndicationItems": 25
       }
     }
   }
 }
 ```
-You can add as many child object as desired. You might have three different feeds pointing on three different page in your CMS tree and that is all supported by this plugin. You can personalize each feeds using this structure. The root level of the "RssFeed" node contains the default values for all content types.
 
-The list of options are the following: 
-| Name | Description | Default | 
+| Name | Description | Default |
 |--|--|--|
-| ContentMaxLength | Length of the content before the plugin trims it in the output of the RSS feed. | 1000000 |
-| MaxSyndicationItems | Max number of syndication items that will be generated for a certain feed. | 50 |
-| SerializeExtensionsAsAtom | When enabled, will serialize extensions within the Atom namespace. | false |
+| ContentMaxLength | Max number of characters that will be written to the `<description>` for each item. | 1000000 |
+| MaxSyndicationItems | Maximum number of items emitted per feed. | 50 |
+| SerializeExtensionsAsAtom | When `true`, extensions are serialized using the Atom namespace. | false |
 
-Additionnaly, the Optimizely specific options are the following: 
-| Name | Description | Default | 
+Optimizely-specific overrides (placed either at root or under the container type name):
+
+| Name | Description | Default |
 |--|--|--|
-| FeedRelativeUrl | The relative URL of your RSS feed based on the location of your container page. | "rss" |
-| ContentAreaPropertyName | The Optimizely content area having the content you want to display in your feed items. If given, the description field in the feed will be automatically populated with this property from your CMS. Otherwise no description tag is generated for all items. | null |
-| FeedTitlePropertyName | The CMS field to use to pull the title from for your syndication link header tag. The Name property is used if not provided. | null |
+| FeedRelativeUrl | Relative segment appended to the container page URL (supports multiple levels such as `"rss/latest"`). | `"rss"` |
+| ContentAreaPropertyName | Content area used to generate item body HTML. Leave null to skip body generation. | null |
+| FeedTitlePropertyName | Fallback property name for the feed title. Defaults to `Name`. | null |
 
-### Azure Blob Configuration
+### Azure Blob configuration
+When using `DavidHome.RssFeed.Storage.AzureBlob`, provide the connection string section to `AddAzureBlobStorage`. For Optimizely DXP you can re-use the built-in connection string:
 
-For Optimizely DXP customers, simply use the following code snippet to load the existing connection string: 
 ```csharp
-_configuration.GetSection("ConnectionStrings").GetSection("EPiServerAzureBlobs")
+var blobConnection = Configuration.GetSection("ConnectionStrings").GetSection("EPiServerAzureBlobs");
+services.AddDavidHomeRssFeed(Configuration)
+        // ...
+        .AddAzureBlobStorage(blobConnection);
 ```
-This needs to be provided when calling ``AddAzureBlobStorage()``. From there, you get the idea, you can provide any connection strings from any section of you configuration and it will work. Make sure to upgrade the package 'Microsoft.Extensions.Azure' to the latest, otherwise this will **not** work.
 
-## Content Type Setup
+Also ensure the project references a recent `Microsoft.Extensions.Azure` package (the helper does not work with older versions).
 
-You will have to customize your content types with marker interfaces:
-* ``IRssFeedContainer<TFeedItem>`` on containers, where ``TFeedItem`` is your feed item content type. 
-* ``IRssFeedItem<TFeedContainer>`` on items, where ``TFeedContainer`` is your container content type. 
+## Building and publishing feeds
+Call `IRssFeedBuilder.BuildFeeds()` to generate feeds for every registered container. It returns an `IAsyncEnumerable<SyndicationFeedResult?>`, so you must `await foreach` the sequence and expect null entries whenever processors detect invalid data.
 
-**VERY IMPORTANT**: Certain properties are not supported by Optimizely and this is by design. Please add the ``IgnoreAttribute`` on top of them. 
+The Optimizely package exposes a ready-to-use scheduled job (`RssFeedGeneratorScheduledJob`). Once the assembly is referenced, enable the job from the Optimizely admin UI to run feed generation on an interval. The job simply iterates the feeds and calls every registered `IRssFeedStorageProvider`:
 
-Normally with both out of the box Optimizely processors, ``OptimizelyContentContainerProcessor`` and ``OptimizelyContentItemProcessor``, you can safely add the ``IgnoreAttribute`` on all properties added by the interfaces. 
+`IRssFeedStorageProvider` implementations are multi-language and host aware starting in 2.0.0, so be sure to pass the `Language` and `HostNameIdentifier` values everywhere you call `Save` or `GetSavedStream`. The Azure Blob provider stores blobs under `<host>/<language>/<feedId>.xml`.
+
+## Serving feeds to clients
+- Partial routing for each container is automatically registered when calling `AddContentPageFeed`. Visiting `/path/to/container/<FeedRelativeUrl>` returns the feed.
+- The Optimizely package already includes `RssFeedDataController`, so once the NuGet is referenced and the site is rebuilt you automatically get the controller that streams the generated XML from every registered `IRssFeedStorageProvider`.
+- To add the RSS `<link>` element to the HTML `<head>` of a container page, call the provided HTML helper: `@Html.SyndicationLink()` (from `DavidHome.RssFeed.Optimizely.Contracts.Extensions`). It renders markup such as `<link href="https://www.example.com/rss/" rel="alternate" title="My Articles" type="application/rss+xml">`.
+- Because discovery now runs per enabled language and per site host, ensure each feed container has published content for the languages/hosts you expect. That guarantees the builder returns one `SyndicationFeedResult` per `(container, host, language)` combination and that the partial router can resolve `FeedRelativeUrl` correctly.

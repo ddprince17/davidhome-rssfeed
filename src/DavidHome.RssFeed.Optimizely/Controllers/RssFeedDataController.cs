@@ -14,15 +14,12 @@ public class RssFeedDataController : Controller, IRenderTemplate<RssFeedRoutedDa
     private readonly IEnumerable<IRssFeedStorageProvider> _rssFeedStorageProviders;
     private readonly IContentLoader _contentLoader;
     private readonly ISiteDefinitionResolver _siteDefinitionResolver;
-    private readonly IRequestHostResolver _requestHostResolver;
 
-    public RssFeedDataController(IEnumerable<IRssFeedStorageProvider> rssFeedStorageProviders, IContentLoader contentLoader, ISiteDefinitionResolver siteDefinitionResolver,
-        IRequestHostResolver requestHostResolver)
+    public RssFeedDataController(IEnumerable<IRssFeedStorageProvider> rssFeedStorageProviders, IContentLoader contentLoader, ISiteDefinitionResolver siteDefinitionResolver)
     {
         _rssFeedStorageProviders = rssFeedStorageProviders;
         _contentLoader = contentLoader;
         _siteDefinitionResolver = siteDefinitionResolver;
-        _requestHostResolver = requestHostResolver;
     }
 
     public async Task<IActionResult> Index()
