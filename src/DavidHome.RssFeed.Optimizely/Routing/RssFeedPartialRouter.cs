@@ -22,13 +22,13 @@ public class RssFeedPartialRouter<TFeedContainer> : RssFeedPartialRouter, IParti
         _contentLoader = contentLoader;
     }
 
-    public object RoutePartial(TFeedContainer content, UrlResolverContext segmentContext)
+    public object? RoutePartial(TFeedContainer content, UrlResolverContext segmentContext)
     {
         var feedSegments = GetFeedRelativeUrl().Split('/').Where(s => !string.IsNullOrEmpty(s)).ToArray();
 
         return IsFeedSegment(feedSegments, segmentContext, segmentContext.GetNextSegment())
             ? new RssFeedRoutedData { FeedId = content.ContentGuid.ToString("N") }
-            : new RssFeedRoutedData();
+            : null;
     }
 
     public PartialRouteData GetPartialVirtualPath(RssFeedRoutedData content, UrlGeneratorContext urlGeneratorContext)
