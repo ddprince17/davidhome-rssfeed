@@ -31,7 +31,7 @@ public class RssFeedPartialRouter<TFeedContainer> : RssFeedPartialRouter, IParti
             : null;
     }
 
-    public PartialRouteData GetPartialVirtualPath(RssFeedRoutedData content, UrlGeneratorContext urlGeneratorContext)
+    public PartialRouteData? GetPartialVirtualPath(RssFeedRoutedData content, UrlGeneratorContext urlGeneratorContext)
     {
         if (Guid.TryParse(content.FeedId, out var contentGuid) && _contentLoader.TryGet(contentGuid, out TFeedContainer feedContainer))
         {
@@ -42,7 +42,7 @@ public class RssFeedPartialRouter<TFeedContainer> : RssFeedPartialRouter, IParti
             };
         }
 
-        return new PartialRouteData();
+        return null;
     }
 
     private static bool IsFeedSegment(string[] feedSegments, UrlResolverContext segmentContext, Segment remainingSegment, int maxDepth = 0)
@@ -53,7 +53,7 @@ public class RssFeedPartialRouter<TFeedContainer> : RssFeedPartialRouter, IParti
         }
 
         var expectedSegment = feedSegments[0];
-        var nextSegment = remainingSegment.Next.ToString();
+        var nextSegment = remainingSegment.Next.Span.ToString();
 
         // We are currently evaluating the first segment of the feed. We can safely remove it from the array.
         feedSegments = feedSegments.Length > 1 ? feedSegments[1..] : [];

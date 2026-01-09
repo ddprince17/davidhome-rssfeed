@@ -17,7 +17,7 @@
         <RepositoryType>git</RepositoryType>
         <RepositoryUrl>https://github.com/ddprince17/davidhome-rssfeed</RepositoryUrl>
         <PackageProjectUrl>https://www.davidhome.net/</PackageProjectUrl>
-        <Copyright>Copyright (c) davidhome.net 2025</Copyright>
+        <Copyright>Copyright (c) davidhome.net 2026</Copyright>
         <Authors>ddprince</Authors>
     </PropertyGroup>
     <ItemGroup>

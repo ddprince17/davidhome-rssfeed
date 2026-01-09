@@ -2,10 +2,11 @@
 using DavidHome.RssFeed.Optimizely.Models;
 using EPiServer;
 using EPiServer.Core;
-using EPiServer.Globalization;
 using EPiServer.Web;
 using EPiServer.Web.Routing.Matching;
 using Microsoft.AspNetCore.Mvc;
+
+// ReSharper disable DuplicatedSequentialIfBodies
 
 namespace DavidHome.RssFeed.Optimizely.Controllers;
 
@@ -40,12 +41,12 @@ public class RssFeedDataController : Controller, IRenderTemplate<RssFeedRoutedDa
         }
 
         var siteDefinition = _siteDefinitionResolver.GetByContent(feedContainer.ContentLink, false);
-        
+
         if (siteDefinition == null)
         {
             return NotFound();
         }
-        
+
         foreach (var rssFeedStorageProvider in _rssFeedStorageProviders)
         {
             var feedSteam = await rssFeedStorageProvider.GetSavedStream(feedRoutedData.FeedId, (feedContainer as ILocale)?.Language.Name, siteDefinition.Id.ToString("N"));
