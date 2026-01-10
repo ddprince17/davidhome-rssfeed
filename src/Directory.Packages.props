@@ -13,5 +13,12 @@
         <PackageVersion Include="System.ServiceModel.Syndication" Version="[8.0.0,)" Condition="'$(TargetFramework)' == 'net8.0'" />
         <PackageVersion Include="System.ServiceModel.Syndication" Version="[10.0.0,)" Condition="'$(TargetFramework)' == 'net10.0'" />
         <PackageVersion Include="GitVersion.MsBuild" Version="6.5.0" />
-    </ItemGroup>
+        <!-- The following are transitive packages forced to a version without known security vulnerabilities. -->
+        <PackageVersion Include="Azure.Identity" Version="[1.10.2,)" />
+        <PackageVersion Include="Microsoft.Data.SqlClient" Version="[4.0.5,)" />
+        <PackageVersion Include="Microsoft.Identity.Client" Version="[4.59.1,)" />
+        <PackageVersion Include="SixLabors.ImageSharp" Version="[2.1.10,)" />
+        <PackageVersion Include="System.IO.Packaging" Version="[6.0.1,)" />
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="[6.0.3,)" />
+    </ItemGroup>    
 </Project>

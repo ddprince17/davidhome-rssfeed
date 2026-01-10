@@ -39,10 +39,11 @@ release_job:
    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   needs:
     - job: deploy
+      artifacts: true
       optional: true
   script:
     - echo "Running the release job."
   release:
     tag_name: $GitVersion_MajorMinorPatch
-    tag_message: 'Release $GitVersion_MajorMinorPatch'
-    description: 'Release $GitVersion_MajorMinorPatch created using the release-cli.'
+    tag_message: Release $GitVersion_MajorMinorPatch
+    description: Release $GitVersion_MajorMinorPatch created using the release-cli.
