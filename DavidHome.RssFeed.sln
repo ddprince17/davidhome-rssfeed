@@ -1,4 +1,4 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.12.35506.116 d17.12
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -21,6 +21,11 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DavidHome.RssFeed.Models", "src\DavidHome.RssFeed.Models\DavidHome.RssFeed.Models.csproj", "{0B538E43-46BC-458E-A07B-7ABCEAF4EC21}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DavidHome.RssFeed.Optimizely.Contracts", "src\DavidHome.RssFeed.Optimizely.Contracts\DavidHome.RssFeed.Optimizely.Contracts.csproj", "{5BF3CBB7-0200-4C96-8BE6-5E218C324EE1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "root", "root", "{E3D00F4F-2A4A-4B2F-9C5A-05ECA154E227}"
+	ProjectSection(SolutionItems) = preProject
+		nuget.config = nuget.config
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

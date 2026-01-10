@@ -17,7 +17,8 @@
         <PackageVersion Include="Azure.Identity" Version="[1.10.2,)" />
         <PackageVersion Include="Microsoft.Data.SqlClient" Version="[4.0.5,)" />
         <PackageVersion Include="Microsoft.Identity.Client" Version="[4.59.1,)" />
-        <PackageVersion Include="SixLabors.ImageSharp" Version="[2.1.10,)" />
+        <!-- Doesn't work for whatever reason. Commented for now. -->
+        <!-- <PackageVersion Include="SixLabors.ImageSharp" Version="[2.1.11,)" />-->
         <PackageVersion Include="System.IO.Packaging" Version="[6.0.1,)" />
         <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="[6.0.3,)" />
     </ItemGroup>    
