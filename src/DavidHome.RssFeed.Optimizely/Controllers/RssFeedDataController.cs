@@ -1,6 +1,7 @@
 ﻿using DavidHome.RssFeed.Contracts;
 using DavidHome.RssFeed.Optimizely.Models;
 using EPiServer;
+using EPiServer.Applications;
 using EPiServer.Core;
 using EPiServer.Web;
 using EPiServer.Web.Routing.Matching;
@@ -14,13 +15,13 @@ public class RssFeedDataController : Controller, IRenderTemplate<RssFeedRoutedDa
 {
     private readonly IEnumerable<IRssFeedStorageProvider> _rssFeedStorageProviders;
     private readonly IContentLoader _contentLoader;
-    private readonly ISiteDefinitionResolver _siteDefinitionResolver;
+    private readonly IApplicationResolver _applicationResolver;
 
-    public RssFeedDataController(IEnumerable<IRssFeedStorageProvider> rssFeedStorageProviders, IContentLoader contentLoader, ISiteDefinitionResolver siteDefinitionResolver)
+    public RssFeedDataController(IEnumerable<IRssFeedStorageProvider> rssFeedStorageProviders, IContentLoader contentLoader, IApplicationResolver applicationResolver)
     {
         _rssFeedStorageProviders = rssFeedStorageProviders;
         _contentLoader = contentLoader;
-        _siteDefinitionResolver = siteDefinitionResolver;
+        _applicationResolver = applicationResolver;
     }
 
     public async Task<IActionResult> Index()
@@ -40,16 +41,16 @@ public class RssFeedDataController : Controller, IRenderTemplate<RssFeedRoutedDa
             return NotFound();
         }
 
-        var siteDefinition = _siteDefinitionResolver.GetByContent(feedContainer.ContentLink, false);
+        var application = await _applicationResolver.GetByContentAsync(feedContainer.ContentLink, false);
 
-        if (siteDefinition == null)
+        if (application == null)
         {
             return NotFound();
         }
 
         foreach (var rssFeedStorageProvider in _rssFeedStorageProviders)
         {
-            var feedSteam = await rssFeedStorageProvider.GetSavedStream(feedRoutedData.FeedId, (feedContainer as ILocale)?.Language.Name, siteDefinition.Id.ToString("N"));
+            var feedSteam = await rssFeedStorageProvider.GetSavedStream(feedRoutedData.FeedId, (feedContainer as ILocale)?.Language.Name, application.Name);
 
             if (feedSteam is not null)
             {

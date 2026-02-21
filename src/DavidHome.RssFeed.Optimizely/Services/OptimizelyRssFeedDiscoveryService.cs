@@ -3,10 +3,10 @@ using DavidHome.RssFeed.Models;
 using DavidHome.RssFeed.Optimizely.Models.Options;
 using DavidHome.RssFeed.Optimizely.Routing;
 using EPiServer;
+using EPiServer.Applications;
 using EPiServer.Core;
 using EPiServer.DataAbstraction;
 using EPiServer.Filters;
-using EPiServer.Web;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -22,13 +22,13 @@ public class OptimizelyRssFeedDiscoveryService : IRssFeedDiscoveryService
     private readonly IContentTypeRepository _contentTypeRepository;
     private readonly ILanguageBranchRepository _languageBranchRepository;
     private readonly IPageCriteriaQueryable _pageCriteriaQueryable;
-    private readonly ISiteDefinitionResolver _siteDefinitionResolver;
+    private readonly IApplicationResolver _applicationResolver;
 
     private RssFeedOptimizelyOptions DefaultOptions => _rssFeedOptions.CurrentValue;
 
     public OptimizelyRssFeedDiscoveryService(IEnumerable<RssFeedPartialRouter> routers, ILogger<OptimizelyRssFeedDiscoveryService> logger,
         IOptionsMonitor<RssFeedOptimizelyOptions> rssFeedOptions, IContentTypeRepository contentTypeRepository, ILanguageBranchRepository languageBranchRepository,
-        IPageCriteriaQueryable pageCriteriaQueryable, ISiteDefinitionResolver siteDefinitionResolver)
+        IPageCriteriaQueryable pageCriteriaQueryable, IApplicationResolver applicationResolver)
     {
         _routers = routers;
         _logger = logger;
@@ -36,7 +36,7 @@ public class OptimizelyRssFeedDiscoveryService : IRssFeedDiscoveryService
         _contentTypeRepository = contentTypeRepository;
         _languageBranchRepository = languageBranchRepository;
         _pageCriteriaQueryable = pageCriteriaQueryable;
-        _siteDefinitionResolver = siteDefinitionResolver;
+        _applicationResolver = applicationResolver;
     }
 
     public virtual async IAsyncEnumerable<FeedDiscoveryResult> ResolveFeeds()
@@ -75,7 +75,7 @@ public class OptimizelyRssFeedDiscoveryService : IRssFeedDiscoveryService
 
             foreach (var containerPage in containerPages)
             {
-                if (!TryGetHostName(containerPage, out var hostNameIdentifier))
+                if (!TryGetHostNameIdentifier(containerPage, out var hostNameIdentifier))
                 {
                     continue;
                 }
@@ -102,19 +102,19 @@ public class OptimizelyRssFeedDiscoveryService : IRssFeedDiscoveryService
         await Task.CompletedTask;
     }
 
-    private bool TryGetHostName(PageData containerPage, out string? hostName)
+    private bool TryGetHostNameIdentifier(PageData containerPage, out string? hostNameIdentifier)
     {
-        var containerSiteDefinition = _siteDefinitionResolver.GetByContent(containerPage.ContentLink, false);
+        var containerSiteDefinition = _applicationResolver.GetByContent(containerPage.ContentLink, false);
         if (containerSiteDefinition == null)
         {
             _logger.LogWarning("Could not resolve site definition for feed container page '{pageName}'. Skipping feed discovery for this page.", containerPage.Name);
 
-            hostName = null;
+            hostNameIdentifier = null;
 
             return false;
         }
 
-        hostName = containerSiteDefinition.Id.ToString("N");
+        hostNameIdentifier = containerSiteDefinition.Name;
 
         return true;
     }

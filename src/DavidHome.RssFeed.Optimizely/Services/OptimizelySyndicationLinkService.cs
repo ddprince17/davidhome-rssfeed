@@ -2,7 +2,7 @@
 using DavidHome.RssFeed.Optimizely.Models;
 using DavidHome.RssFeed.Optimizely.Models.Options;
 using EPiServer;
-using EPiServer.Web;
+using EPiServer.Applications;
 using EPiServer.Web.Routing;
 using EPiServer.Web.Routing.Matching;
 using Microsoft.AspNetCore.Html;
@@ -17,18 +17,18 @@ public class OptimizelySyndicationLinkService : IOptimizelySyndicationLinkServic
     private readonly IUrlResolver _urlResolver;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IOptionsMonitor<RssFeedOptimizelyOptions> _feedOptions;
-    private readonly ISiteDefinitionResolver _siteDefinitionResolver;
+    private readonly IApplicationResolver _applicationResolver;
 
     private RssFeedOptimizelyOptions DefaultFeedOptions => _feedOptions.CurrentValue;
     private RssFeedOptimizelyOptions ContainerFeedOptions(string? containerName) => _feedOptions.Get(containerName);
 
     public OptimizelySyndicationLinkService(IUrlResolver urlResolver, IHttpContextAccessor httpContextAccessor, IOptionsMonitor<RssFeedOptimizelyOptions> feedOptions,
-        ISiteDefinitionResolver siteDefinitionResolver)
+        IApplicationResolver applicationResolver)
     {
         _urlResolver = urlResolver;
         _httpContextAccessor = httpContextAccessor;
         _feedOptions = feedOptions;
-        _siteDefinitionResolver = siteDefinitionResolver;
+        _applicationResolver = applicationResolver;
     }
 
     public IHtmlContent GenerateSyndicationLink()
@@ -44,9 +44,9 @@ public class OptimizelySyndicationLinkService : IOptimizelySyndicationLinkServic
 
         var feedTitlePropertyName = ContainerFeedOptions(routedContent.GetOriginalType().Name).FeedTitlePropertyName ?? DefaultFeedOptions.FeedTitlePropertyName;
         var feedTitle = string.IsNullOrEmpty(feedTitlePropertyName) ? routedContent.Name : routedContent.Property[feedTitlePropertyName]?.Value as string;
-        var siteDefinition = _siteDefinitionResolver.GetByContent(routedContent.ContentLink, false);
-
-        if (Uri.TryCreate(siteDefinition?.SiteUrl, feedUrl, out var feedUri))
+        var application = _applicationResolver.GetByContent(routedContent.ContentLink, false) as IRoutableApplication;
+        
+        if (Uri.TryCreate(application?.Url, feedUrl, out var feedUri))
         {
             return new TagBuilder("link")
                 { Attributes = { { "href", feedUri.ToString() }, { "rel", "alternate" }, { "title", feedTitle }, { "type", "application/rss+xml" } } };

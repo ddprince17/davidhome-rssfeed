@@ -1,11 +1,10 @@
 using DavidHome.RssFeed.Contracts;
 using EPiServer.DataAbstraction;
-using EPiServer.PlugIn;
 using EPiServer.Scheduler;
 
 namespace DavidHome.RssFeed.Optimizely.Jobs;
 
-[ScheduledPlugIn(DisplayName = "DavidHome - RSS Feed Generator", Description = "Generates the RSS feed for the website.", Restartable = true,
+[ScheduledJob(DisplayName = "DavidHome - RSS Feed Generator", Description = "Generates the RSS feed for the website.", Restartable = true,
     IntervalType = ScheduledIntervalType.Hours, IntervalLength = 1, GUID = "7F803FF7-FE55-49B9-B8D0-BEE5B8FCEDA9")]
 public class RssFeedGeneratorScheduledJob : ScheduledJobBase
 {
