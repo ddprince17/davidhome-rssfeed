@@ -25,6 +25,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "root", "root", "{E3D00F4F-2A4A-4B2F-9C5A-05ECA154E227}"
 	ProjectSection(SolutionItems) = preProject
 		nuget.config = nuget.config
+		CHANGELOG = CHANGELOG
 	EndProjectSection
 EndProject
 Global
