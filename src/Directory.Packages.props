@@ -5,14 +5,14 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageVersion Include="Azure.Storage.Blobs" Version="[12.13.1,13.0.0)"/>
-        <PackageVersion Include="EPiServer.CMS.AspNetCore" Version="[13.0.0-preview2,13.0.0)"/>
-        <PackageVersion Include="EPiServer.Cms.AspNetCore.Templating" Version="[13.0.0-preview2,13.0.0)"/>
-        <PackageVersion Include="EPiServer.Cms.AspNetCore.HtmlHelpers" Version="[13.0.0-preview2,13.0.0)"/>
-        <PackageVersion Include="EPiServer.CMS.Core" Version="[13.0.0-preview2,13.0.0)"/>
+        <PackageVersion Include="EPiServer.CMS.AspNetCore" Version="[13.0.0,14.0.0)"/>
+        <PackageVersion Include="EPiServer.Cms.AspNetCore.Templating" Version="[13.0.0,14.0.0)"/>
+        <PackageVersion Include="EPiServer.Cms.AspNetCore.HtmlHelpers" Version="[13.0.0,14.0.0)"/>
+        <PackageVersion Include="EPiServer.CMS.Core" Version="[13.0.0,14.0.0)"/>
         <PackageVersion Include="Microsoft.Extensions.Azure" Version="[1.0.0,2.0.0)"/>
         <PackageVersion Include="System.ServiceModel.Syndication" Version="[10.0.0,)" />
         <PackageVersion Include="GitVersion.MsBuild" Version="6.6.0" />
         <!-- The following are transitive packages forced to a version without known security vulnerabilities. -->
-        <PackageVersion Include="Azure.Identity" Version="[1.15.0,)" />
+        <PackageVersion Include="Azure.Identity" Version="[1.17.1,)" />
     </ItemGroup>
 </Project>

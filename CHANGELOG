@@ -1,15 +1,25 @@
-Changes Since 2.0.0
+## Version 3.0.0
+
+Breaking Changes
+
+- Added compatibility with Optimizely CMS 13.
+- Package targeting has moved to `net10.0` only. The previous `net8.0` target has been removed.
+- Optimizely integration now targets CMS 13 packages and application-based APIs.
+- Host resolution now uses the resolved application name, which changes the host identifier used when reading and writing stored feeds.
 
 Changed
 
-- GitLab release job now uses the GitLab CLI (glab) to publish releases from CHANGELOG.
-- README expanded with package overview, service registration, configuration, and feed serving guidance.
-- RssFeedDataController no longer requires IRequestHostResolver.
-- RssFeedPartialRouter returns null when a feed route does not match and uses segment span parsing.
-- License and package metadata updated to 2026.
+- `RssFeedDataController` now resolves feeds through `IApplicationResolver` and no longer depends on `IRequestHostResolver`.
+- `OptimizelyRssFeedDiscoveryService` and `OptimizelySyndicationLinkService` now use application resolution APIs instead of the earlier site-definition flow.
+- `RssFeedPartialRouter` now returns `null` for non-matching routes and uses span-based segment parsing.
+- The Optimizely feed generation job now uses the CMS 13 `ScheduledJob` attribute.
+- Added `CHANGELOG` to the solution items.
 
 Build/Dependencies
 
-- Added central package pins for Azure.Identity, Microsoft.Data.SqlClient, Microsoft.Identity.Client, System.IO.Packaging, and System.Security.Cryptography.Pkcs.
-- Package lock files refreshed to reflect dependency pins.
-- Added CHANGELOG to solution items.
+- Updated Optimizely package references from the CMS 12 line to the CMS 13 line.
+- Standardized on `System.ServiceModel.Syndication` `10.x`.
+- Updated `GitVersion.MsBuild` to `6.6.0`.
+- Updated `Azure.Storage.Blobs` to `12.13.1`.
+- Updated the central `Azure.Identity` pin to `1.17.1`.
+- Refreshed lock files to match the new package graph.
