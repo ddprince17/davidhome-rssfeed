@@ -27,33 +27,6 @@
           "System.ServiceModel.Syndication": "[10.0.0, )"
         }
       }
-    },
-    "net8.0": {
-      "GitVersion.MsBuild": {
-        "type": "Direct",
-        "requested": "[6.6.0, )",
-        "resolved": "6.6.0",
-        "contentHash": "DleYRs4QwkTFmqODJKBgQ3wRbPytZ/Zb5ZdBczUslXkAizp+2vVS+NuivgjwzZNnLKyVFa3IYUAcGbcMAgs3Ww=="
-      },
-      "System.ServiceModel.Syndication": {
-        "type": "Direct",
-        "requested": "[8.0.0, )",
-        "resolved": "8.0.0",
-        "contentHash": "CJxIUwpBkMCPmIx46tFVOt0zpRrYurUHLW6tJBcmyj+MyWpKc6MMcS69B7IdlV/bgtgys073wMIHZX9QOQ1OFA=="
-      },
-      "davidhome.rssfeed.contracts": {
-        "type": "Project",
-        "dependencies": {
-          "DavidHome.RssFeed.Models": "[1.0.0, )",
-          "System.ServiceModel.Syndication": "[8.0.0, )"
-        }
-      },
-      "davidhome.rssfeed.models": {
-        "type": "Project",
-        "dependencies": {
-          "System.ServiceModel.Syndication": "[8.0.0, )"
-        }
-      }
     }
   }
 }
